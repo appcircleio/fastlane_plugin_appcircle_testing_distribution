@@ -5,8 +5,8 @@ require 'fastlane/plugin/appcircle_testing_distribution/version'
 Gem::Specification.new do |spec|
   spec.name          = 'fastlane-plugin-appcircle_testing_distribution'
   spec.version       = Fastlane::AppcircleTestingDistribution::VERSION
-  spec.author        = 'Guven Karanfil'
-  spec.email         = 'guven.karanfil@smartface.io'
+  spec.author        = 'appcircleio'
+  spec.email         = 'cloud@appcircle.io'
 
   spec.summary       = "Efficiently distribute application builds to users or testing groups using Appcircle's robust platform."
   spec.homepage      = "https://github.com/appcircleio/fastlane_plugin_appcircle_testing_distribution"
