@@ -5,7 +5,32 @@ module Fastlane
   module Actions
     class AppcircleTestingDistributionAction < Action
       def self.run(params)
-        UI.message("The appcircle_testing_distribution plugin is working!")
+        accessToken = params[:accessToken]
+        profileID = params[:profileID]
+        appPath = params[:appPath]
+        message = params[:message]
+
+        self.ac_login(accessToken)
+        self.ac_upload(appPath, profileID, message)
+
+      end
+
+      def self.ac_login(accessToken)
+        ac_login = `appcircle login --pat #{accessToken}`
+        if $?.success?
+          UI.success("Logged in to Appcircle successfully.")
+        else
+          raise "Error executing command of logging to Appcircle. Please make sure you have installed Appcircle CLI and provided a valid access token. For more information, please visit https://docs.appcircle.io/appcircle-api/api-authentication#generatingmanaging-the-personal-api-tokens #{ac_login}"
+        end
+      end
+
+      def self.ac_upload(appPath, profileID, message)
+        ac_upload = `appcircle testing-distribution upload --app=#{appPath} --distProfileId=#{profileID} --message "#{message}"`;
+        if $?.success?
+          UI.success("#{appPath} Uploaded to Appcircle successfully.")
+        else
+          raise "Error executing command of uploading to Appcircle. Please make sure you have provide the valid app path and distribution profile id. For more information\n" + ac_upload
+        end
       end
 
       def self.description
@@ -13,7 +38,7 @@ module Fastlane
       end
 
       def self.authors
-        ["Guven Karanfil"]
+        ["appcircleio"]
       end
 
       def self.return_value
@@ -27,11 +52,29 @@ module Fastlane
 
       def self.available_options
         [
-          # FastlaneCore::ConfigItem.new(key: :your_option,
-          #                         env_name: "APPCIRCLE_TESTING_DISTRIBUTION_YOUR_OPTION",
-          #                      description: "A description of your option",
-          #                         optional: false,
-          #                             type: String)
+          FastlaneCore::ConfigItem.new(key: :accessToken,
+                                  env_name: "AC_ACCESS_TOKEN",
+                               description: "Provide the Appcircle access token to authenticate connections to Appcircle services. This token allows your Azure DevOps pipeline to interact with Appcircle for distributing applications",
+                                  optional: false,
+                                      type: String),
+
+          FastlaneCore::ConfigItem.new(key: :profileID,
+                                  env_name: "AC_PROFILE_ID",
+                               description: "Enter the ID of the Appcircle distribution profile. This ID uniquely identifies the profile under which your applications will be distributed",
+                                  optional: false,
+                                      type: String),
+
+          FastlaneCore::ConfigItem.new(key: :appPath,
+                                  env_name: "AC_APP_PATH",
+                               description: "Specify the path to your application file. For iOS, this can be a .ipa or .xcarchive file path. For Android, specify the .apk or .appbundle file path",
+                                  optional: false,
+                                      type: String),
+                                      
+          FastlaneCore::ConfigItem.new(key: :message,
+                                  env_name: "AC_MESSAGE",
+                               description: "Optional message to include with the distribution to provide additional information to testers or users receiving the build",
+                                  optional: false,
+                                      type: String),
         ]
       end
 
@@ -39,8 +82,7 @@ module Fastlane
         # Adjust this if your plugin only works for a particular platform (iOS vs. Android, for example)
         # See: https://docs.fastlane.tools/advanced/#control-configuration-by-lane-and-by-platform
         #
-        # [:ios, :mac, :android].include?(platform)
-        true
+        [:ios, :android].include?(platform)
       end
     end
   end

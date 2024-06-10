@@ -8,7 +8,7 @@ Gem::Specification.new do |spec|
   spec.author        = 'Guven Karanfil'
   spec.email         = 'guven.karanfil@smartface.io'
 
-  spec.summary       = 'Efficiently distribute application builds to users or testing groups using Appcircle's robust platform.'
+  spec.summary       = "Efficiently distribute application builds to users or testing groups using Appcircle's robust platform."
   # spec.homepage      = "https://github.com/<GITHUB_USERNAME>/fastlane-plugin-appcircle_testing_distribution"
   spec.license       = "MIT"
 
