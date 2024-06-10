@@ -9,7 +9,7 @@ Gem::Specification.new do |spec|
   spec.email         = 'guven.karanfil@smartface.io'
 
   spec.summary       = "Efficiently distribute application builds to users or testing groups using Appcircle's robust platform."
-  # spec.homepage      = "https://github.com/<GITHUB_USERNAME>/fastlane-plugin-appcircle_testing_distribution"
+  spec.homepage      = "https://github.com/appcircleio/fastlane_plugin_appcircle_testing_distribution"
   spec.license       = "MIT"
 
   spec.files         = Dir["lib/**/*"] + %w(README.md LICENSE)
