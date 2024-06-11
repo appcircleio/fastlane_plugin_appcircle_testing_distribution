@@ -38,13 +38,13 @@ Testing distribution is the process of distributing test builds to designated te
 
 Overall, using testing distribution in mobile DevOps significantly enhances the efficiency, security, and effectiveness of the software development process, leading to better products and faster delivery times.
 
-### Testing Distribution
+## Testing Distribution
 
 In order to share your builds with testers, you can create distribution profiles and assign testing groups to the distribution profiles.
 
 ![Distribution Profile](images/distribution-start.png)
 
-### Generating/Managing the Personal API Tokens
+## Generating/Managing the Personal API Tokens
 
 To generate a Personal API Token, follow these steps:
 
@@ -87,7 +87,7 @@ For any other issues and feedback about this plugin, please submit it to this re
 
 If you have trouble using plugins, check out the [Plugins Troubleshooting](https://docs.fastlane.tools/plugins/plugins-troubleshooting/) guide.
 
-### Reference
+## Reference
 
 - For details on generating an Appcircle Personal Access Token, visit [Generating/Managing Personal API Tokens](https://docs.appcircle.io/appcircle-api/api-authentication#generatingmanaging-the-personal-api-tokens?utm_source=fastlane&utm_medium=plugin&utm_campaign=testing_distribution)
 
