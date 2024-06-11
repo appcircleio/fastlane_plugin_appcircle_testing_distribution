@@ -12,7 +12,7 @@ Gem::Specification.new do |spec|
   spec.homepage      = "https://github.com/appcircleio/fastlane_plugin_appcircle_testing_distribution"
   spec.license       = "MIT"
 
-  spec.files         = Dir["lib/**/*"] + Dir["images/**/*"] + %w(README.md LICENSE)
+  spec.files         = Dir["lib/**/*"] + Dir["images/*.png"] + %w(README.md LICENSE)
   spec.require_paths = ['lib']
   spec.metadata['rubygems_mfa_required'] = 'false'
   spec.required_ruby_version = '>= 2.6'
