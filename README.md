@@ -42,7 +42,7 @@ Overall, using testing distribution in mobile DevOps significantly enhances the 
 
 In order to share your builds with testers, you can create distribution profiles and assign testing groups to the distribution profiles.
 
-![Distribution Profile](images/distribution-start.png)
+![Distribution Profile](<https://cdn.appcircle.io/docs/assets/image%20(152).png>)
 
 ## Generating/Managing the Personal API Tokens
 
@@ -52,7 +52,7 @@ To generate a Personal API Token, follow these steps:
 2. You'll find the Personal API Token section in the top right corner.
 3. Press the "Generate Token" button to generate your first token.
 
-![Token Generation](images/PAT.png)
+![Token Generation](<https://cdn.appcircle.io/docs/assets/image%20(164).png>)
 
 ## Getting Started with the Extension: Usage Guide
 
