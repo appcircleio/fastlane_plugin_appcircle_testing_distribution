@@ -13,6 +13,17 @@ module Fastlane
         appPath = params[:appPath]
         message = params[:message]
 
+        if accessToken.nil?
+          raise UI.error("Access token is required to authenticate connections to Appcircle services. Please provide a valid access token")
+        elsif profileID.nil?
+          raise UI.error("Distribution profile ID is required to distribute applications. Please provide a valid distribution profile ID")
+        elsif appPath.nil?
+          raise UI.error("Application file path is required to distribute applications. Please provide a valid application file path")
+        elsif message.nil?
+          raise UI.error("Message field is required. Please provide a valid message")
+        end
+
+
         self.ac_login(accessToken)
         self.ac_upload(appPath, profileID, message)
       end
@@ -94,7 +105,7 @@ module Fastlane
         [
           FastlaneCore::ConfigItem.new(key: :accessToken,
                                        env_name: "AC_ACCESS_TOKEN",
-                                       description: "Provide the Appcircle access token to authenticate connections to Appcircle services. This token allows your Azure DevOps pipeline to interact with Appcircle for distributing applications",
+                                       description: "Provide the Appcircle access token to authenticate connections to Appcircle services",
                                        optional: false,
                                        type: String),
 
