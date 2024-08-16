@@ -67,7 +67,8 @@ fastlane add_plugin appcircle_testing_distribution
 ```yml
   appcircle_testing_distribution(
     accessToken: "$(AC_ACCESS_TOKEN)",
-    profileID: "$(AC_PROFILE_ID)",
+    profileName: "$(AC_PROFILE_NAME)",
+    createProfileIfNotExists: Boolean,
     appPath: "$(AC_APP_PATH)",
     message: "$(AC_MESSAGE)",
   )
