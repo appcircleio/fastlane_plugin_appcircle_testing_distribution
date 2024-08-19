@@ -4,8 +4,8 @@ require 'uri'
 require 'json'
 
 require_relative '../helper/appcircle_testing_distribution_helper'
-require_relative './auth_service'
-require_relative './upload_service'
+require_relative '../helper/auth_service'
+require_relative '../helper/upload_service'
 
 module Fastlane
   module Actions
@@ -70,7 +70,6 @@ module Fastlane
             raise "Upload could not completed successfully"
           end
         else
-          UI.error("Upload failed with response code #{response.code} and message '#{response.message}'")
           raise "Upload failed with response code #{response.code} and message '#{response.message}'"
         end
       end
