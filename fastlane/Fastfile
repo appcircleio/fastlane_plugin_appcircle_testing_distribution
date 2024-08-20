@@ -4,6 +4,6 @@ lane :test do
     profileName: ENV["AC_PROFILE_NAME"],
     appPath: ENV["AC_APP_PATH"],
     message: ENV["AC_MESSAGE"],
-    createProfileIfNotExists: true
+    createProfileIfNotExists: ENV["CREATE_PROFILE_IF_NOT_EXISTS"]
   )
 end
