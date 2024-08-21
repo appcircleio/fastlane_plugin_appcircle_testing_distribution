@@ -17,7 +17,7 @@ module Fastlane
         message = params[:message]
         createProfileIfNotExists = params[:createProfileIfNotExists]
 
-        valid_extensions = ['.apk', '.aab', '.ipa']
+        valid_extensions = ['.apk', '.aab' '.ipa', '.zip']
 
         file_extension = File.extname(appPath).downcase
         unless valid_extensions.include?(file_extension)
