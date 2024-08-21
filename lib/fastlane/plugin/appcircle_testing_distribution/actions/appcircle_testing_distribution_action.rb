@@ -4,8 +4,8 @@ require 'uri'
 require 'json'
 
 require_relative '../helper/appcircle_testing_distribution_helper'
-require_relative '../helper/auth_service'
-require_relative '../helper/upload_service'
+require_relative '../helper/TDAuthService'
+require_relative '../helper/TDUploadService'
 
 module Fastlane
   module Actions
@@ -37,13 +37,13 @@ module Fastlane
 
         authToken = self.ac_login(accessToken)
 
-        profileId = UploadService.get_profile_id(authToken, profileName, createProfileIfNotExists)
+        profileId = TDUploadService.get_profile_id(authToken, profileName, createProfileIfNotExists)
         self.ac_upload(authToken, appPath, profileId, message)
       end
 
       def self.ac_login(accessToken)
         begin
-          user = AuthService.get_ac_token(pat: accessToken)
+          user = TDAuthService.get_ac_token(pat: accessToken)
           UI.success("Login is successful.")
           return user.accessToken
         rescue => e
@@ -84,7 +84,7 @@ module Fastlane
 
       def self.ac_upload(token, appPath, profileID, message)
         begin
-          response = UploadService.upload_artifact(token: token, message: message, app: appPath, dist_profile_id: profileID)
+          response = TDUploadService.upload_artifact(token: token, message: message, app: appPath, dist_profile_id: profileID)
           result = self.checkTaskStatus(token, response['taskId'])
 
           if $?.success? and result

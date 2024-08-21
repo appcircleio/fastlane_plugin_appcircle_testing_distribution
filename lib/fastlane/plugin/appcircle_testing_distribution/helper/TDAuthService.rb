@@ -12,7 +12,7 @@ class UserResponse
   end
 end
 
-module AuthService
+module TDAuthService
   def self.get_ac_token(pat:)
     endpoint_url = 'https://auth.appcircle.io/auth/v2/token'
     uri = URI(endpoint_url)

@@ -5,7 +5,7 @@ require 'rest-client'
 
 BASE_URL = "https://api.appcircle.io"
 
-module UploadService
+module TDUploadService
   def self.upload_artifact(token:, message:, app:, dist_profile_id:)
     url = "https://api.appcircle.io/distribution/v2/profiles/#{dist_profile_id}/app-versions"
     headers = {
@@ -74,7 +74,7 @@ module UploadService
     profileId = nil
 
     begin
-      profiles = UploadService.get_distribution_profiles(auth_token: authToken)
+      profiles = TDUploadService.get_distribution_profiles(auth_token: authToken)
       profiles.each do |profile|
         if profile["name"] == profileName
           profileId = profile['id']
@@ -91,7 +91,7 @@ module UploadService
     if profileId.nil? && createProfileIfNotExists
       begin
         puts "The test profile '#{profileName}' could not be found. A new profile is being created..."
-        new_profile = UploadService.create_distribution_profile(name: profileName, auth_token: authToken)
+        new_profile = TDUploadService.create_distribution_profile(name: profileName, auth_token: authToken)
         if new_profile.nil?
           raise "Error: The new profile could not be created."
         end
