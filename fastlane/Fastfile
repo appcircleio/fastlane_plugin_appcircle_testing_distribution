@@ -1,6 +1,6 @@
 lane :test do
   appcircle_testing_distribution(
-    accessToken: ENV["AC_ACCESS_TOKEN"],
+    personalAPIToken: ENV["AC_ACCESS_TOKEN"],
     profileName: ENV["AC_PROFILE_NAME"],
     appPath: ENV["AC_APP_PATH"],
     message: ENV["AC_MESSAGE"],

@@ -11,7 +11,7 @@ module Fastlane
   module Actions
     class AppcircleTestingDistributionAction < Action
       def self.run(params)
-        accessToken = params[:accessToken]
+        personalAPIToken = params[:personalAPIToken]
         profileName = params[:profileName]
         appPath = params[:appPath]
         message = params[:message]
@@ -24,8 +24,8 @@ module Fastlane
           raise "Invalid file extension: #{file_extension}. For Android, use .apk or .aab. For iOS, use .ipa."
         end
 
-        if accessToken.nil?
-          raise UI.error("Access token is required to authenticate connections to Appcircle services. Please provide a valid access token")
+        if personalAPIToken.nil?
+          raise UI.error("Personal API Token is required to authenticate connections to Appcircle services. Please provide a valid access token")
         elsif profileName.nil?
           raise UI.error("Distribution profile name is required to distribute applications. Please provide a distribution profile name")
         elsif appPath.nil?
@@ -35,15 +35,15 @@ module Fastlane
         end
 
 
-        authToken = self.ac_login(accessToken)
+        authToken = self.ac_login(personalAPIToken)
 
         profileId = TDUploadService.get_profile_id(authToken, profileName, createProfileIfNotExists)
         self.ac_upload(authToken, appPath, profileId, message)
       end
 
-      def self.ac_login(accessToken)
+      def self.ac_login(personalAPIToken)
         begin
-          user = TDAuthService.get_ac_token(pat: accessToken)
+          user = TDAuthService.get_ac_token(pat: personalAPIToken)
           UI.success("Login is successful.")
           return user.accessToken
         rescue => e
@@ -114,9 +114,9 @@ module Fastlane
 
       def self.available_options
         [
-          FastlaneCore::ConfigItem.new(key: :accessToken,
-                                       env_name: "AC_ACCESS_TOKEN",
-                                       description: "Provide the Appcircle access token to authenticate connections to Appcircle services",
+          FastlaneCore::ConfigItem.new(key: :personalAPIToken,
+                                       env_name: "AC_PERSONAL_API_TOKEN",
+                                       description: "Provide Personal API Token to authenticate connections to Appcircle services",
                                        optional: false,
                                        type: String),
           
