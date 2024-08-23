@@ -66,13 +66,17 @@ fastlane add_plugin appcircle_testing_distribution
 
 ```yml
   appcircle_testing_distribution(
-    accessToken: "$(AC_ACCESS_TOKEN)",
+    personalAPIToken: "$(AC_PERSONAL_API_TOKEN)",
     profileName: "$(AC_PROFILE_NAME)",
     createProfileIfNotExists: Boolean,
     appPath: "$(AC_APP_PATH)",
     message: "$(AC_MESSAGE)",
   )
 ```
+
+#### Automatic Profile Management
+
+**createProfileIfNotExists** paramater ensures that a user profile is automatically created if it does not already exist; if the profile name already exists, the app will be uploaded to that existing profile instead.
 
 ### Leveraging Environment Variables
 
