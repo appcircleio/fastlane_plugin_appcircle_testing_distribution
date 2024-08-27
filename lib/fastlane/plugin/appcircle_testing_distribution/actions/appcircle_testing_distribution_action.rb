@@ -17,11 +17,11 @@ module Fastlane
         message = params[:message]
         createProfileIfNotExists = params[:createProfileIfNotExists]
 
-        valid_extensions = ['.apk', '.aab' '.ipa', '.zip']
+        valid_extensions = ['.apk', '.aab', '.ipa', '.zip']
 
         file_extension = File.extname(appPath).downcase
         unless valid_extensions.include?(file_extension)
-          raise "Invalid file extension: #{file_extension}. For Android, use .apk or .aab. For iOS, use .ipa."
+          raise "Invalid file extension: #{file_extension}. For Android, use .apk or .aab. For iOS, use .ipa or .zip(.xcarchive)."
         end
 
         if personalAPIToken.nil?
