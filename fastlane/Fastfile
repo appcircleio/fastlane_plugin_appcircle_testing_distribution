@@ -1,8 +1,9 @@
 lane :test do
   appcircle_testing_distribution(
-    accessToken: "$(AC_ACCESS_TOKEN)",
-    profileID: "$(AC_PROFILE_ID)",
-    appPath: "$(AC_APP_PATH)",
-    message: "$(AC_MESSAGE)",
+    personalAPIToken: ENV["AC_ACCESS_TOKEN"],
+    profileName: ENV["AC_PROFILE_NAME"],
+    appPath: ENV["AC_APP_PATH"],
+    message: ENV["AC_MESSAGE"],
+    createProfileIfNotExists: ENV["CREATE_PROFILE_IF_NOT_EXISTS"]
   )
 end

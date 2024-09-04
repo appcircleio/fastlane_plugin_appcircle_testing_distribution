@@ -2,21 +2,32 @@ require 'fastlane/action'
 require 'net/http'
 require 'uri'
 require 'json'
+
 require_relative '../helper/appcircle_testing_distribution_helper'
+require_relative '../helper/TDAuthService'
+require_relative '../helper/TDUploadService'
 
 module Fastlane
   module Actions
     class AppcircleTestingDistributionAction < Action
       def self.run(params)
-        accessToken = params[:accessToken]
-        profileID = params[:profileID]
+        personalAPIToken = params[:personalAPIToken]
+        profileName = params[:profileName]
         appPath = params[:appPath]
         message = params[:message]
+        createProfileIfNotExists = params[:createProfileIfNotExists]
 
-        if accessToken.nil?
-          raise UI.error("Access token is required to authenticate connections to Appcircle services. Please provide a valid access token")
-        elsif profileID.nil?
-          raise UI.error("Distribution profile ID is required to distribute applications. Please provide a valid distribution profile ID")
+        valid_extensions = ['.apk', '.aab', '.ipa', '.zip']
+
+        file_extension = File.extname(appPath).downcase
+        unless valid_extensions.include?(file_extension)
+          raise "Invalid file extension: #{file_extension}. For Android, use .apk or .aab. For iOS, use .ipa or .zip(.xcarchive)."
+        end
+
+        if personalAPIToken.nil?
+          raise UI.error("Personal API Token is required to authenticate connections to Appcircle services. Please provide a valid access token")
+        elsif profileName.nil?
+          raise UI.error("Distribution profile name is required to distribute applications. Please provide a distribution profile name")
         elsif appPath.nil?
           raise UI.error("Application file path is required to distribute applications. Please provide a valid application file path")
         elsif message.nil?
@@ -24,32 +35,33 @@ module Fastlane
         end
 
 
-        self.ac_login(accessToken)
-        self.ac_upload(appPath, profileID, message)
+        authToken = self.ac_login(personalAPIToken)
+
+        profileId = TDUploadService.get_profile_id(authToken, profileName, createProfileIfNotExists)
+        self.ac_upload(authToken, appPath, profileId, message)
       end
 
-      def self.ac_login(accessToken)
-        ac_login = `appcircle login --pat #{accessToken}`
-        if $?.success?
-          UI.success("Logged in to Appcircle successfully.")
-        else
-          raise "Error executing command of logging to Appcircle. Please make sure you have installed Appcircle CLI and provided a valid access token. For more information, please visit https://docs.appcircle.io/appcircle-api/api-authentication#generatingmanaging-the-personal-api-tokens #{ac_login}"
+      def self.ac_login(personalAPIToken)
+        begin
+          user = TDAuthService.get_ac_token(pat: personalAPIToken)
+          UI.success("Login is successful.")
+          return user.accessToken
+        rescue => e
+          puts "Login failed: #{e.message}"
         end
       end
       
-      def self.checkTaskStatus(taskId)
+      def self.checkTaskStatus(authToken, taskId)
         uri = URI.parse("https://api.appcircle.io/task/v1/tasks/#{taskId}")
         timeout = 1
-        jwtToken = `appcircle config get AC_ACCESS_TOKEN -o json`
-        apiAccessToken = JSON.parse(jwtToken)
         
-        response = self.send_request(uri, apiAccessToken["AC_ACCESS_TOKEN"])
+        response = self.send_request(uri, authToken)
         if response.is_a?(Net::HTTPSuccess)
           stateValue = JSON.parse(response.body)["stateValue"]
           
           if stateValue == 1
             sleep(1)
-            return checkTaskStatus(taskId)
+            return checkTaskStatus(authToken, taskId)
           end
           if stateValue == 3
             return true
@@ -58,8 +70,7 @@ module Fastlane
             raise "Upload could not completed successfully"
           end
         else
-          UI.error("Request failed with response code #{response.code} and message #{response.message}")
-          raise "Request failed"
+          raise "Upload failed with response code #{response.code} and message '#{response.message}'"
         end
       end
 
@@ -71,16 +82,16 @@ module Fastlane
         http.request(request)
       end
 
-      def self.ac_upload(appPath, profileID, message)
-        ac_upload = `appcircle testing-distribution upload --app=#{appPath} --distProfileId=#{profileID} --message "#{message}" -o json`
-        taskId = JSON.parse(ac_upload)["taskId"]
-        UI.message("taskID #{taskId}")
-        result = self.checkTaskStatus(taskId)
+      def self.ac_upload(token, appPath, profileID, message)
+        begin
+          response = TDUploadService.upload_artifact(token: token, message: message, app: appPath, dist_profile_id: profileID)
+          result = self.checkTaskStatus(token, response['taskId'])
 
-        if $?.success? and result
-          UI.success("#{appPath} Uploaded to Appcircle successfully.")
-        else
-          raise "Error executing command of uploading to Appcircle. Please make sure you have provide the valid app path and distribution profile id. For more information\n" + ac_upload
+          if $?.success? and result
+            UI.success("#{appPath} Uploaded to profile id #{profileID} successfully  🎉")
+          end
+        rescue => e
+          UI.error("Upload failed with status code #{e.response.code}, with message '#{e.message}'")
         end
       end
 
@@ -103,17 +114,23 @@ module Fastlane
 
       def self.available_options
         [
-          FastlaneCore::ConfigItem.new(key: :accessToken,
-                                       env_name: "AC_ACCESS_TOKEN",
-                                       description: "Provide the Appcircle access token to authenticate connections to Appcircle services",
+          FastlaneCore::ConfigItem.new(key: :personalAPIToken,
+                                       env_name: "AC_PERSONAL_API_TOKEN",
+                                       description: "Provide Personal API Token to authenticate connections to Appcircle services",
                                        optional: false,
                                        type: String),
-
-          FastlaneCore::ConfigItem.new(key: :profileID,
-                                       env_name: "AC_PROFILE_ID",
-                                       description: "Enter the ID of the Appcircle distribution profile. This ID uniquely identifies the profile under which your applications will be distributed",
+          
+          FastlaneCore::ConfigItem.new(key: :profileName,
+                                       env_name: "AC_PROFILE_NAME",
+                                       description: "Enter the profile name of the Appcircle distribution profile. This name uniquely identifies the profile under which your applications will be distributed",
                                        optional: false,
                                        type: String),
+          
+          FastlaneCore::ConfigItem.new(key: :createProfileIfNotExists,
+                                       env_name: "AC_CREATE_PROFILE_IF_NOT_EXISTS",
+                                       description: "If the profile does not exist, create a new profile with the given name",
+                                       optional: true,
+                                       type: Boolean),
 
           FastlaneCore::ConfigItem.new(key: :appPath,
                                        env_name: "AC_APP_PATH",
