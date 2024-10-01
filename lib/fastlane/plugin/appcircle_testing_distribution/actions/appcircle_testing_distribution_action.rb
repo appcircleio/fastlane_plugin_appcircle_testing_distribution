@@ -87,11 +87,12 @@ module Fastlane
           response = TDUploadService.upload_artifact(token: token, message: message, app: appPath, dist_profile_id: profileID)
           result = self.checkTaskStatus(token, response['taskId'])
 
-          if $?.success? and result
+          if result
             UI.success("#{appPath} Uploaded to profile id #{profileID} successfully  🎉")
           end
         rescue => e
-          UI.error("Upload failed with status code #{e.response.code}, with message '#{e.message}'")
+          status_code = e.respond_to?(:response) && e.response ? e.response.code : 'unknown'
+          UI.error("Upload failed with status code #{status_code}, with message '#{e.message}'")
         end
       end
 
