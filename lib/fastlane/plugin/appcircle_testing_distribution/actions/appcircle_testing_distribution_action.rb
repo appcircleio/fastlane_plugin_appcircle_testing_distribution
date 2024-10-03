@@ -47,7 +47,7 @@ module Fastlane
           UI.success("Login is successful.")
           return user.accessToken
         rescue => e
-          puts "Login failed: #{e.message}"
+          UI.user_error!("Login failed: #{e.message}")
         end
       end
       
