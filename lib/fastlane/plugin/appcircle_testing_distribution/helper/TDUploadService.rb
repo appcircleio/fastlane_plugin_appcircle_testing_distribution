@@ -10,8 +10,7 @@ module TDUploadService
     url = "https://api.appcircle.io/distribution/v2/profiles/#{dist_profile_id}/app-versions"
     headers = {
       Authorization: "Bearer #{token}",
-      Message: message,
-      content_type: :multipart
+      content_type: :multipart # multipart/form-data
     }
     payload = {
       Message: message,

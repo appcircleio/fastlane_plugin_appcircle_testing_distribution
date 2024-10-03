@@ -1,9 +1,12 @@
+require 'dotenv'
+Dotenv.load
+
 lane :test do
   appcircle_testing_distribution(
     personalAPIToken: ENV["AC_ACCESS_TOKEN"],
-    profileName: ENV["AC_PROFILE_NAME"],
     appPath: ENV["AC_APP_PATH"],
+    profileName: ENV["AC_PROFILE_NAME"],
+    createProfileIfNotExists: ENV["CREATE_PROFILE_IF_NOT_EXISTS"],
     message: ENV["AC_MESSAGE"],
-    createProfileIfNotExists: ENV["CREATE_PROFILE_IF_NOT_EXISTS"]
   )
 end

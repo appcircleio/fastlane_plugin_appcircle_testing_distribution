@@ -21,17 +21,17 @@ module Fastlane
 
         file_extension = File.extname(appPath).downcase
         unless valid_extensions.include?(file_extension)
-          raise "Invalid file extension: #{file_extension}. For Android, use .apk or .aab. For iOS, use .ipa or .zip(.xcarchive)."
+          UI.user_error!("Invalid file extension: #{file_extension}. For Android, use .apk or .aab. For iOS, use .ipa or .zip(.xcarchive).")
         end
 
         if personalAPIToken.nil?
-          raise UI.error("Personal API Token is required to authenticate connections to Appcircle services. Please provide a valid access token")
+          UI.user_error!("Personal API Token is required to authenticate connections to Appcircle services. Please provide a valid access token")
         elsif profileName.nil?
-          raise UI.error("Distribution profile name is required to distribute applications. Please provide a distribution profile name")
+          UI.user_error!("Distribution profile name is required to distribute applications. Please provide a distribution profile name")
         elsif appPath.nil?
-          raise UI.error("Application file path is required to distribute applications. Please provide a valid application file path")
+          UI.user_error!("Application file path is required to distribute applications. Please provide a valid application file path")
         elsif message.nil?
-          raise UI.error("Message field is required. Please provide a valid message")
+          UI.user_error!("Message field is required. Please provide a valid message")
         end
 
 
@@ -47,7 +47,7 @@ module Fastlane
           UI.success("Login is successful.")
           return user.accessToken
         rescue => e
-          puts "Login failed: #{e.message}"
+          UI.user_error!("Login failed: #{e.message}")
         end
       end
       
@@ -92,7 +92,7 @@ module Fastlane
           end
         rescue => e
           status_code = e.respond_to?(:response) && e.response ? e.response.code : 'unknown'
-          UI.error("Upload failed with status code #{status_code}, with message '#{e.message}'")
+          UI.user_error!("Upload failed with status code #{status_code}, with message '#{e.message}'")
         end
       end
 
