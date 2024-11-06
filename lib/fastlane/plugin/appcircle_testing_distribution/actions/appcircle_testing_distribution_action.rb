@@ -17,11 +17,11 @@ module Fastlane
         message = params[:message]
         createProfileIfNotExists = params[:createProfileIfNotExists]
 
-        valid_extensions = ['.apk', '.aab', '.ipa', '.zip']
+        valid_extensions = ['.apk', '.aab', '.ipa']
 
         file_extension = File.extname(appPath).downcase
         unless valid_extensions.include?(file_extension)
-          UI.user_error!("Invalid file extension: #{file_extension}. For Android, use .apk or .aab. For iOS, use .ipa or .zip(.xcarchive).")
+          UI.user_error!("Invalid file extension: #{file_extension}. For Android, use .apk or .aab. For iOS, use .ipa.")
         end
 
         if personalAPIToken.nil?
@@ -135,7 +135,7 @@ module Fastlane
 
           FastlaneCore::ConfigItem.new(key: :appPath,
                                        env_name: "AC_APP_PATH",
-                                       description: "Specify the path to your application file. For iOS, this can be a .ipa or .xcarchive file path. For Android, specify the .apk or .appbundle file path",
+                                       description: "Specify the path to your application file. For iOS, this can be a .ipa file path. For Android, specify the .apk or .aab file path",
                                        optional: false,
                                        type: String),
 
