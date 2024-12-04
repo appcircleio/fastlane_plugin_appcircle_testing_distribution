@@ -13,9 +13,12 @@ module Fastlane
       def self.run(params)
         personalAPIToken = params[:personalAPIToken]
         profileName = params[:profileName]
+        createProfileIfNotExists = params[:createProfileIfNotExists] || false
+        profileAuthType = params[:profileCreationSettings]&.dig(:authType) || 0
+        profileUsername = params[:profileCreationSettings]&.dig(:username)
+        profilePassword = params[:profileCreationSettings]&.dig(:password)
         appPath = params[:appPath]
         message = params[:message]
-        createProfileIfNotExists = params[:createProfileIfNotExists]
 
         valid_extensions = ['.apk', '.aab', '.ipa', '.zip']
 
@@ -34,10 +37,20 @@ module Fastlane
           UI.user_error!("Message field is required. Please provide a valid message")
         end
 
-
+        # Auth
         authToken = self.ac_login(personalAPIToken)
 
-        profileId = TDUploadService.get_profile_id(authToken, profileName, createProfileIfNotExists)
+        # Get or create profile
+        profileId = TDUploadService.get_profile_id(authToken, profileName)
+        
+        if profileId.nil? && !createProfileIfNotExists
+          raise "Error: The test profile '#{profileName}' could not be found. The option 'createProfileIfNotExists' is set to false, so no new profile was created. To automatically create a new profile if it doesn't exist, set 'createProfileIfNotExists' to true."
+        elsif profileId.nil? && createProfileIfNotExists
+          puts "The test profile '#{profileName}' could not be found. A new profile is being created..."
+          profileId = TDUploadService.create_profile(authToken, profileName, profileAuthType, profileUsername, profilePassword)
+        end
+
+        # Upload package
         self.ac_upload(authToken, appPath, profileId, message)
       end
 
@@ -132,6 +145,21 @@ module Fastlane
                                        description: "If the profile does not exist, create a new profile with the given name",
                                        optional: true,
                                        type: Boolean),
+          
+          FastlaneCore::ConfigItem.new(key: :profileCreationSettings,
+                                       description: "Profile creation settings for the distribution profile",
+                                       optional: true,
+                                       type: Hash,
+                                       verify_block: proc do |value|
+                                         value[:authType] ||= ENV["AC_PROFILE_AUTH_TYPE"]
+                                         value[:authType] = value[:authType].to_i
+                                         value[:username] ||= ENV["AC_PROFILE_USERNAME"]
+                                         value[:password] ||= ENV["AC_PROFILE_PASSWORD"]
+
+                                         UI.user_error!("Invalid authType: '#{value[:authType]}'. Options: 0 (None), 1 (Static), 2 (LDAP), 3 (SSO).") unless [0, 1, 2, 3].include?(value[:authType])
+                                         UI.user_error!("username must be a String") unless value[:username].kind_of?(String)
+                                         UI.user_error!("password must be a String") unless value[:password].kind_of?(String)
+                                       end),
 
           FastlaneCore::ConfigItem.new(key: :appPath,
                                        env_name: "AC_APP_PATH",

@@ -69,7 +69,32 @@ module TDUploadService
     end
   end
 
-  def self.get_profile_id(authToken, profileName, createProfileIfNotExists)
+  def self.update_distribution_profile(profile_id:, auth_type:, username:, password:, auth_token:)
+    url = "#{BASE_URL}/distribution/v2/profiles/#{profile_id}"
+    headers = {
+      Authorization: "Bearer #{auth_token}",
+      content_type: :json,
+      accept: 'application/json-patch+json'
+    }
+    payload = {
+      settings: {
+        authenticationType: auth_type,
+        username: username,
+        password: password
+      }
+    }.to_json
+  
+    begin
+      response = RestClient.patch(url, payload, headers)
+      JSON.parse(response.body)
+    rescue RestClient::ExceptionWithResponse => e
+      raise e
+    rescue StandardError => e
+      raise e
+    end
+  end
+
+  def self.get_profile_id(authToken, profileName)
     profileId = nil
 
     begin
@@ -83,14 +108,16 @@ module TDUploadService
       raise "Something went wrong while fetching profiles: #{e.message}"
     end
       
-    if profileId.nil? && !createProfileIfNotExists
-      raise "Error: The test profile '#{profileName}' could not be found. The option 'createProfileIfNotExists' is set to false, so no new profile was created. To automatically create a new profile if it doesn't exist, set 'createProfileIfNotExists' to true."
+    return profileId
     end
 
-    if profileId.nil? && createProfileIfNotExists
+  def self.create_profile(authToken, profileName, profileAuthType, profileUsername, profilePassword)
+    # Create
       begin
-        puts "The test profile '#{profileName}' could not be found. A new profile is being created..."
-        new_profile = TDUploadService.create_distribution_profile(name: profileName, auth_token: authToken)
+      new_profile = TDUploadService.create_distribution_profile(
+        name: profileName,
+        auth_token: authToken
+      )
         if new_profile.nil?
           raise "Error: The new profile could not be created."
         end
@@ -98,6 +125,23 @@ module TDUploadService
       rescue => e
         raise "Something went wrong while creating a new profile: #{e.message}"
       end
+
+    # Configure
+    begin
+      puts "Configuring the profile..."
+      configured_profile = TDUploadService.update_distribution_profile(
+        profile_id: profileId, 
+        auth_type: profileAuthType, 
+        username: profileUsername, 
+        password: profilePassword, 
+        auth_token: authToken
+      )
+      if configured_profile.nil?
+        raise "Error: The new profile could not be configured."
+      end
+      profileId = configured_profile['id'] # Should be the same as before
+    rescue => e
+      raise "Something went wrong while configuring the new profile: #{e.message}"
     end
 
     return profileId
