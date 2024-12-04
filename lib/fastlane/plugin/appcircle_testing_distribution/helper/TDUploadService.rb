@@ -38,9 +38,7 @@ module TDUploadService
   
     begin
       response = RestClient.get(url, headers)
-      parsed_response = JSON.parse(response.body)
-  
-      parsed_response
+      JSON.parse(response.body)
     rescue RestClient::ExceptionWithResponse => e
       raise e
     rescue StandardError => e
@@ -102,29 +100,30 @@ module TDUploadService
       profiles.each do |profile|
         if profile["name"] == profileName
           profileId = profile['id']
+          break
         end
       end
     rescue => e
       raise "Something went wrong while fetching profiles: #{e.message}"
     end
-      
+
     return profileId
-    end
+  end
 
   def self.create_profile(authToken, profileName, profileAuthType, profileUsername, profilePassword)
     # Create
-      begin
+    begin
       new_profile = TDUploadService.create_distribution_profile(
         name: profileName,
         auth_token: authToken
       )
-        if new_profile.nil?
-          raise "Error: The new profile could not be created."
-        end
-        profileId = new_profile['id']
-      rescue => e
-        raise "Something went wrong while creating a new profile: #{e.message}"
+      if new_profile.nil?
+        raise "Error: The new profile could not be created."
       end
+      profileId = new_profile['id']
+    rescue => e
+      raise "Something went wrong while creating a new profile: #{e.message}"
+    end
 
     # Configure
     begin

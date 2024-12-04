@@ -66,24 +66,24 @@ module Fastlane
       
       def self.checkTaskStatus(authToken, taskId)
         uri = URI.parse("https://api.appcircle.io/task/v1/tasks/#{taskId}")
-        timeout = 1
-        
-        response = self.send_request(uri, authToken)
-        if response.is_a?(Net::HTTPSuccess)
-          stateValue = JSON.parse(response.body)["stateValue"]
-          
-          if stateValue == 1
-            sleep(1)
-            return checkTaskStatus(authToken, taskId)
-          end
-          if stateValue == 3
-            return true
+        check_interval = 1
+      
+        loop do
+          response = self.send_request(uri, authToken)
+          if response.is_a?(Net::HTTPSuccess)
+            stateValue = JSON.parse(response.body)["stateValue"]
+      
+            if stateValue == 1
+              sleep(check_interval)
+            elsif stateValue == 3
+              return true
+            else
+              UI.error("Task Id #{taskId} failed with state value #{stateValue}")
+              raise "Upload could not be completed successfully"
+            end
           else
-            UI.error("Task Id #{taskId} failed with state value #{stateValue}")
-            raise "Upload could not completed successfully"
+            raise "Upload failed with response code #{response.code} and message '#{response.message}'"
           end
-        else
-          raise "Upload failed with response code #{response.code} and message '#{response.message}'"
         end
       end
 
