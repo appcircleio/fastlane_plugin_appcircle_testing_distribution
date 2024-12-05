@@ -10,39 +10,38 @@ require_relative '../helper/TDUploadService'
 module Fastlane
   module Actions
     class AppcircleTestingDistributionAction < Action
+      VALID_EXTENSIONS = ['.apk', '.aab', '.ipa', '.zip']
+      AUTH_TYPE_MAPPING = {
+        nil => 0, # Undefined
+        0 => 1,   # None
+        1 => 3,   # Static
+        2 => 4,   # LDAP
+        3 => 5,   # SSO
+      }
+      
       def self.run(params)
         personalAPIToken = params[:personalAPIToken]
         profileName = params[:profileName]
         createProfileIfNotExists = params[:createProfileIfNotExists] || false
-        profileAuthType = params[:profileCreationSettings]&.dig(:authType) || 0
+        profileAuthType = params[:profileCreationSettings]&.dig(:authType)
         profileUsername = params[:profileCreationSettings]&.dig(:username)
         profilePassword = params[:profileCreationSettings]&.dig(:password)
         appPath = params[:appPath]
         message = params[:message]
 
-        valid_extensions = ['.apk', '.aab', '.ipa', '.zip']
-
         file_extension = File.extname(appPath).downcase
-        unless valid_extensions.include?(file_extension)
+        unless VALID_EXTENSIONS.include?(file_extension)
           UI.user_error!("Invalid file extension: #{file_extension}. For Android, use .apk or .aab. For iOS, use .ipa or .zip(.xcarchive).")
         end
-
-        if personalAPIToken.nil?
-          UI.user_error!("Personal API Token is required to authenticate connections to Appcircle services. Please provide a valid access token")
-        elsif profileName.nil?
-          UI.user_error!("Distribution profile name is required to distribute applications. Please provide a distribution profile name")
-        elsif appPath.nil?
-          UI.user_error!("Application file path is required to distribute applications. Please provide a valid application file path")
-        elsif message.nil?
-          UI.user_error!("Message field is required. Please provide a valid message")
-        end
+        
+        profileAuthType = AUTH_TYPE_MAPPING[profileAuthType] # map input to API values
 
         # Auth
         authToken = self.ac_login(personalAPIToken)
 
         # Get or create profile
         profileId = TDUploadService.get_profile_id(authToken, profileName)
-        
+
         if profileId.nil? && !createProfileIfNotExists
           raise "Error: The test profile '#{profileName}' could not be found. The option 'createProfileIfNotExists' is set to false, so no new profile was created. To automatically create a new profile if it doesn't exist, set 'createProfileIfNotExists' to true."
         elsif profileId.nil? && createProfileIfNotExists
@@ -132,13 +131,19 @@ module Fastlane
                                        env_name: "AC_PERSONAL_API_TOKEN",
                                        description: "Provide Personal API Token to authenticate connections to Appcircle services",
                                        optional: false,
-                                       type: String),
+                                       type: String,
+                                       verify_block: proc do |value|
+                                         UI.user_error!("Personal API Token cannot be empty. Please provide a valid access token") unless (value and not value.empty?)
+                                       end),
           
           FastlaneCore::ConfigItem.new(key: :profileName,
                                        env_name: "AC_PROFILE_NAME",
                                        description: "Enter the profile name of the Appcircle distribution profile. This name uniquely identifies the profile under which your applications will be distributed",
                                        optional: false,
-                                       type: String),
+                                       type: String,
+                                       verify_block: proc do |value|
+                                         UI.user_error!("Distribution profile name cannot be empty. Please provide a distribution profile name") unless (value and not value.empty?)
+                                       end),
           
           FastlaneCore::ConfigItem.new(key: :createProfileIfNotExists,
                                        env_name: "AC_CREATE_PROFILE_IF_NOT_EXISTS",
@@ -155,23 +160,31 @@ module Fastlane
                                          value[:authType] = value[:authType].to_i
                                          value[:username] ||= ENV["AC_PROFILE_USERNAME"]
                                          value[:password] ||= ENV["AC_PROFILE_PASSWORD"]
-
+                                         
                                          UI.user_error!("Invalid authType: '#{value[:authType]}'. Options: 0 (None), 1 (Static), 2 (LDAP), 3 (SSO).") unless [0, 1, 2, 3].include?(value[:authType])
-                                         UI.user_error!("username must be a String") unless value[:username].kind_of?(String)
-                                         UI.user_error!("password must be a String") unless value[:password].kind_of?(String)
+                                         if value[:authType] == 1
+                                          UI.user_error!("username must be a String and at least 6 characters long") unless value[:username].kind_of?(String) && value[:username].length >= 6
+                                          UI.user_error!("password must be a String and at least 6 characters long") unless value[:password].kind_of?(String) && value[:password].length >= 6
+                                         end
                                        end),
 
           FastlaneCore::ConfigItem.new(key: :appPath,
                                        env_name: "AC_APP_PATH",
                                        description: "Specify the path to your application file. For iOS, this can be a .ipa or .xcarchive file path. For Android, specify the .apk or .appbundle file path",
                                        optional: false,
-                                       type: String),
+                                       type: String,
+                                       verify_block: proc do |value|
+                                         UI.user_error!("Application file path cannot be empty. Please provide a valid application file path") unless (value and not value.empty?)
+                                       end),
 
           FastlaneCore::ConfigItem.new(key: :message,
                                        env_name: "AC_MESSAGE",
                                        description: "Optional message to include with the distribution to provide additional information to testers or users receiving the build",
                                        optional: false,
-                                       type: String)
+                                       type: String,
+                                       verify_block: proc do |value|
+                                         UI.user_error!("Message field cannot be empty. Please provide a valid message") unless (value and not value.empty?)
+                                       end)
         ]
       end
 
