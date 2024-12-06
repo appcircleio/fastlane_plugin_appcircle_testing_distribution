@@ -2,6 +2,7 @@ require 'net/http'
 require 'uri'
 require 'json'
 require 'rest-client'
+require_relative '../helper/appcircle_testing_distribution_helper'
 
 BASE_URL = "https://api.appcircle.io"
 
@@ -46,6 +47,25 @@ module TDUploadService
     end
   end
 
+  def self.get_testing_groups(auth_token:)
+    url = "#{BASE_URL}/distribution/v2/testing-groups"
+  
+    # Set up the headers with authentication
+    headers = {
+      Authorization: "Bearer #{auth_token}",
+      accept: 'application/json'
+    }
+  
+    begin
+      response = RestClient.get(url, headers)
+      JSON.parse(response.body)
+    rescue RestClient::ExceptionWithResponse => e
+      raise e
+    rescue StandardError => e
+      raise e
+    end
+  end
+
   def self.create_distribution_profile(name:, auth_token:)
     url = "#{BASE_URL}/distribution/v2/profiles"
     headers = {
@@ -67,7 +87,7 @@ module TDUploadService
     end
   end
 
-  def self.update_distribution_profile(profile_id:, auth_type:, username:, password:, auth_token:)
+  def self.update_distribution_profile(profile_id:, auth_type:, username:, password:, testing_group_ids:, auth_token:)
     url = "#{BASE_URL}/distribution/v2/profiles/#{profile_id}"
     headers = {
       Authorization: "Bearer #{auth_token}",
@@ -78,8 +98,9 @@ module TDUploadService
       settings: {
         authenticationType: auth_type,
         username: username,
-        password: password
-      }
+        password: password,
+      },
+      testingGroupIds: testing_group_ids
     }.to_json
   
     begin
@@ -110,7 +131,29 @@ module TDUploadService
     return profileId
   end
 
-  def self.create_profile(authToken, profileName, profileAuthType, profileUsername, profilePassword)
+  def self.get_testing_group_ids(authToken, testingGroupNames)
+    testingGroupIds = []
+    remainingGroupNames = Set.new(testingGroupNames)
+
+    begin
+      groups = TDUploadService.get_testing_groups(auth_token: authToken)
+
+      groups.each do |group|
+        if remainingGroupNames.include?(group["name"])
+          testingGroupIds.push(group['id'])
+          remainingGroupNames.delete(group["name"])        
+        end
+      end
+    rescue => e
+      raise "Something went wrong while fetching testing groups: #{e.message}."
+    end
+
+    Fastlane::UI.important("Following testing groups couldn't be found and will be ignored: #{remainingGroupNames.to_a.join(', ')}.") unless remainingGroupNames.empty?
+
+    return testingGroupIds
+  end
+
+  def self.create_profile(authToken, profileName, profileAuthType, profileUsername, profilePassword, profileTestingGroupNames)
     # Create
     begin
       new_profile = TDUploadService.create_distribution_profile(
@@ -125,14 +168,20 @@ module TDUploadService
       raise "Something went wrong while creating a new profile: #{e.message}."
     end
 
+    # Get testing group IDs
+    if !profileTestingGroupNames&.empty?
+      profileTestingGroupIds = TDUploadService.get_testing_group_ids(authToken, profileTestingGroupNames)
+    end
+
     # Configure
     begin
-      puts "Configuring the profile..."
+      Fastlane::UI.message("Configuring the profile...")
       configured_profile = TDUploadService.update_distribution_profile(
-        profile_id: profileId, 
-        auth_type: profileAuthType, 
-        username: profileUsername, 
-        password: profilePassword, 
+        profile_id: profileId,
+        auth_type: profileAuthType,
+        username: profileUsername,
+        password: profilePassword,
+        testing_group_ids: profileTestingGroupIds,
         auth_token: authToken
       )
       if configured_profile.nil?
