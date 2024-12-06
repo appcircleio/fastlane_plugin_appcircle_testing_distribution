@@ -86,7 +86,7 @@ fastlane add_plugin appcircle_testing_distribution
       authType: "${AC_PROFILE_AUTH_TYPE}",
       username: "${AC_PROFILE_USERNAME}",
       password: "${AC_PROFILE_PASSWORD}",
-      organizationId: "${AC_PROFILE_ORGANIZATION_ID}",
+      subOrgName: "${AC_PROFILE_SUBORG_NAME}",
     },
     appPath: "$(AC_APP_PATH)",
     message: "$(AC_MESSAGE)",
@@ -100,7 +100,7 @@ fastlane add_plugin appcircle_testing_distribution
    - `authType`: Authentication type of the profile. `none`: None, `static`: Static Username and Password, `ldap`: LDAP Login, `sso`: SSO Login. If this variable is not defined, the profile's authentication type will also be undefined and login will not be possible.
    - `username`: The username for the profile if authentication type set to `static` (Static Username and Password).
    - `password`: The password for the profile if authentication type set to `static` (Static Username and Password).
-   - `organizationId`: An optional parameter used when you use Root Organization's `personalAPIToken` for login, and you want to create a profile for a sub-organization. In that case, you need to provide the organization ID of the sub-organization in this field. If you directly used the sub-organization's `personalAPIToken`, organization ID is not required.
+   - `subOrgName`: An optional parameter used when you use Root Organization's `personalAPIToken` for login, and you want to create a profile for a sub-organization. In that case, you need to provide the name of the sub-organization in this field. If you directly used the sub-organization's `personalAPIToken`, sub-organization name is not required.
 - `appPath`: Indicates the file path to the application that will be uploaded to Appcircle Testing Distribution Profile.
 - `message`: Your message to testers, ensuring they receive important updates and information regarding the application.
 
