@@ -80,13 +80,13 @@ fastlane add_plugin appcircle_testing_distribution
 ```yml
   appcircle_testing_distribution(
     personalAPIToken: "$(AC_PERSONAL_API_TOKEN)",
+    subOrganizationName: "${AC_SUB_ORGANIZATION_NAME}",
     profileName: "$(AC_PROFILE_NAME)",
     createProfileIfNotExists: "${AC_CREATE_PROFILE_IF_NOT_EXISTS}",
     profileCreationSettings: {
       authType: "${AC_PROFILE_AUTH_TYPE}",
       username: "${AC_PROFILE_USERNAME}",
       password: "${AC_PROFILE_PASSWORD}",
-      subOrgName: "${AC_PROFILE_SUBORG_NAME}",
     },
     appPath: "$(AC_APP_PATH)",
     message: "$(AC_MESSAGE)",
@@ -94,13 +94,13 @@ fastlane add_plugin appcircle_testing_distribution
 ```
 
 - `personalAPIToken`: The Appcircle Personal API token is utilized to authenticate and secure access to Appcircle services, ensuring that only authorized users can perform actions within the platform.
+- `subOrganizationName` (optional): Required when the Root Organization's `personalAPIToken` is used, and you want to create the profile under a sub-organization. In this case, provide the name of the sub-organization in this field. If you directly used the sub-organization's `personalAPIToken`, this parameter is not needed.
 - `profileName`: Specifies the profile that will be used for uploading the app.
 - `createProfileIfNotExists` (optional): Ensures that a testing distribution profile is automatically created if it does not already exist; if the profile name already exists, the app will be uploaded to that existing profile instead.
 - `profileCreationSettings` (optional): If `createProfileIfNotExists` is `true` and a new profile being created, the profile will be configured with these settings.
    - `authType`: Authentication type of the profile. `none`: None, `static`: Static Username and Password, `ldap`: LDAP Login, `sso`: SSO Login. If this variable is not defined, the profile's authentication type will also be undefined and login will not be possible.
    - `username`: The username for the profile if authentication type set to `static` (Static Username and Password).
    - `password`: The password for the profile if authentication type set to `static` (Static Username and Password).
-   - `subOrgName`: An optional parameter used when you use Root Organization's `personalAPIToken` for login, and you want to create a profile for a sub-organization. In that case, you need to provide the name of the sub-organization in this field. If you directly used the sub-organization's `personalAPIToken`, sub-organization name is not required.
 - `appPath`: Indicates the file path to the application that will be uploaded to Appcircle Testing Distribution Profile.
 - `message`: Your message to testers, ensuring they receive important updates and information regarding the application.
 

@@ -21,12 +21,12 @@ module Fastlane
       
       def self.run(params)
         personalAPIToken = params[:personalAPIToken]
+        subOrganizationName = params[:subOrganizationName]
         profileName = params[:profileName]
         createProfileIfNotExists = params[:createProfileIfNotExists] || false
         profileAuthType = params[:profileCreationSettings]&.dig(:authType)
         profileUsername = params[:profileCreationSettings]&.dig(:username)
         profilePassword = params[:profileCreationSettings]&.dig(:password)
-        profileOrganizationId = params[:profileCreationSettings]&.dig(:organizationId)
         appPath = params[:appPath]
         message = params[:message]
 
@@ -38,7 +38,7 @@ module Fastlane
         profileAuthType = AUTH_TYPE_MAPPING[profileAuthType] # map input to API values
 
         # Auth
-        authToken = self.ac_login(personalAPIToken)
+        authToken = self.ac_login(personalAPIToken, subOrganizationName)
 
         # Get or create profile
         profileId = TDUploadService.get_profile_id(authToken, profileName)
@@ -47,18 +47,30 @@ module Fastlane
           raise "Error: The test profile '#{profileName}' could not be found. The option 'createProfileIfNotExists' is set to false, so no new profile was created. To automatically create a new profile if it doesn't exist, set 'createProfileIfNotExists' to true."
         elsif profileId.nil? && createProfileIfNotExists
           puts "The test profile '#{profileName}' could not be found. A new profile is being created..."
-          profileId = TDUploadService.create_profile(authToken, profileName, profileAuthType, profileUsername, profilePassword, profileOrganizationId)
+          profileId = TDUploadService.create_profile(authToken, profileName, profileAuthType, profileUsername, profilePassword)
         end
 
         # Upload package
         self.ac_upload(authToken, appPath, profileId, message)
       end
 
-      def self.ac_login(personalAPIToken)
+      def self.ac_login(personalAPIToken, subOrganizationName)
         begin
+          token = ''
+
           user = TDAuthService.get_ac_token(pat: personalAPIToken)
           UI.success("Login is successful.")
-          return user.accessToken
+          token = user.accessToken
+          
+          if subOrganizationName
+            organization_id = TDAuthService.get_organization_id(access_token: token, name: subOrganizationName)
+            user = TDAuthService.get_ac_token(pat: personalAPIToken, sub_organization_id: organization_id)
+            UI.success("Switched to sub-organization: #{subOrganizationName}")
+            token = user.accessToken
+          end
+          
+          return token
+
         rescue => e
           UI.user_error!("Login failed: #{e.message}.")
         end
@@ -136,6 +148,12 @@ module Fastlane
                                        verify_block: proc do |value|
                                          UI.user_error!("Personal API Token cannot be empty. Please provide a valid access token.") unless (value and not value.empty?)
                                        end),
+
+          FastlaneCore::ConfigItem.new(key: :subOrganizationName,
+                                       env_name: "AC_SUB_ORGANIZATION_NAME",
+                                       description: "Optional: Sub-organization name for app distribution. Profiles will be created under root organization if not provided",
+                                       optional: true,
+                                       type: String),
           
           FastlaneCore::ConfigItem.new(key: :profileName,
                                        env_name: "AC_PROFILE_NAME",
@@ -148,26 +166,24 @@ module Fastlane
           
           FastlaneCore::ConfigItem.new(key: :createProfileIfNotExists,
                                        env_name: "AC_CREATE_PROFILE_IF_NOT_EXISTS",
-                                       description: "If the profile does not exist, create a new profile with the given name",
+                                       description: "Optional: If the profile does not exist, create a new profile with the given name",
                                        optional: true,
                                        type: Boolean),
           
           FastlaneCore::ConfigItem.new(key: :profileCreationSettings,
-                                       description: "Profile creation settings for the testing distribution profile",
+                                       description: "Optional: Profile creation settings for the testing distribution profile",
                                        optional: true,
                                        type: Hash,
                                        verify_block: proc do |value|
                                          value[:authType] ||= ENV["AC_PROFILE_AUTH_TYPE"]
                                          value[:username] ||= ENV["AC_PROFILE_USERNAME"]
                                          value[:password] ||= ENV["AC_PROFILE_PASSWORD"]
-                                         value[:organizationId] ||= ENV["AC_PROFILE_ORGANIZATION_ID"]
                                          
                                          UI.user_error!("Invalid authType: '#{value[:authType]}'. Options: 0 (None), 1 (Static Username and Password), 2 (LDAP Login), 3 (SSO Login).") unless AUTH_TYPE_MAPPING.key?(value[:authType])
                                          if value[:authType] == 1
                                           UI.user_error!("username must be a String and at least 6 characters long.") unless value[:username].kind_of?(String) && value[:username].length >= 6
                                           UI.user_error!("password must be a String and at least 6 characters long.") unless value[:password].kind_of?(String) && value[:password].length >= 6
                                          end
-                                         UI.user_error!("organizationId must be a UUID") unless Helper::AppcircleTestingDistributionHelper.uuid_valid(value[:organizationId])
                                        end),
 
           FastlaneCore::ConfigItem.new(key: :appPath,
