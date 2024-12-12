@@ -12,11 +12,11 @@ module Fastlane
     class AppcircleTestingDistributionAction < Action
       VALID_EXTENSIONS = ['.apk', '.aab', '.ipa', '.zip']
       AUTH_TYPE_MAPPING = {
-        nil => 0, # Undefined
-        0 => 1,   # None
-        1 => 3,   # Static
-        2 => 4,   # LDAP
-        3 => 5,   # SSO
+        nil => 0,   # Undefined
+        '0' => 1,   # None
+        '1' => 3,   # Static Username and Password
+        '2' => 4,   # LDAP Login
+        '3' => 5,   # SSO Login
       }
       
       def self.run(params)
@@ -161,7 +161,7 @@ module Fastlane
                                          value[:username] ||= ENV["AC_PROFILE_USERNAME"]
                                          value[:password] ||= ENV["AC_PROFILE_PASSWORD"]
                                          
-                                         UI.user_error!("Invalid authType: '#{value[:authType]}'. Options: 0 (None), 1 (Static), 2 (LDAP), 3 (SSO).") unless [0, 1, 2, 3].include?(value[:authType])
+                                         UI.user_error!("Invalid authType: '#{value[:authType]}'. Options: 0 (None), 1 (Static Username and Password), 2 (LDAP Login), 3 (SSO Login).") unless [nil, '0', '1', '2', '3'].include?(value[:authType])
                                          if value[:authType] == 1
                                           UI.user_error!("username must be a String and at least 6 characters long") unless value[:username].kind_of?(String) && value[:username].length >= 6
                                           UI.user_error!("password must be a String and at least 6 characters long") unless value[:password].kind_of?(String) && value[:password].length >= 6
