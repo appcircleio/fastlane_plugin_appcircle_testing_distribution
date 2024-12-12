@@ -157,11 +157,10 @@ module Fastlane
                                        type: Hash,
                                        verify_block: proc do |value|
                                          value[:authType] ||= ENV["AC_PROFILE_AUTH_TYPE"]
-                                         value[:authType] = value[:authType].to_i
                                          value[:username] ||= ENV["AC_PROFILE_USERNAME"]
                                          value[:password] ||= ENV["AC_PROFILE_PASSWORD"]
                                          
-                                         UI.user_error!("Invalid authType: '#{value[:authType]}'. Options: 0 (None), 1 (Static Username and Password), 2 (LDAP Login), 3 (SSO Login).") unless [nil, '0', '1', '2', '3'].include?(value[:authType])
+                                         UI.user_error!("Invalid authType: '#{value[:authType]}'. Options: 0 (None), 1 (Static Username and Password), 2 (LDAP Login), 3 (SSO Login).") unless AUTH_TYPE_MAPPING.key?(value[:authType])
                                          if value[:authType] == 1
                                           UI.user_error!("username must be a String and at least 6 characters long") unless value[:username].kind_of?(String) && value[:username].length >= 6
                                           UI.user_error!("password must be a String and at least 6 characters long") unless value[:password].kind_of?(String) && value[:password].length >= 6

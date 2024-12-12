@@ -96,6 +96,7 @@ fastlane add_plugin appcircle_testing_distribution
 - `profileName`: Specifies the profile that will be used for uploading the app.
 - `createProfileIfNotExists`: Ensures that a user profile is automatically created if it does not already exist; if the profile name already exists, the app will be uploaded to that existing profile instead.
 - `profileCreationSettings`: If `createProfileIfNotExists` is `true` and a new profile being created, the profile will be configured with these settings.
+<!-- If this variable is undefined, authentication type of the profile will also be undefined as well and login will not be possible. -->
    - `authType`: Authentication type of the profile. 0: None, 1: Static Username and Password, 2: LDAP Login, 3: SSO Login.
    - `username`: The username for the profile if authentication type is 1 (Static Username and Password).
    - `password`: The password for the profile if authentication type is 1 (Static Username and Password).
