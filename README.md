@@ -96,10 +96,9 @@ fastlane add_plugin appcircle_testing_distribution
 - `profileName`: Specifies the profile that will be used for uploading the app.
 - `createProfileIfNotExists`: Ensures that a user profile is automatically created if it does not already exist; if the profile name already exists, the app will be uploaded to that existing profile instead.
 - `profileCreationSettings`: If `createProfileIfNotExists` is `true` and a new profile being created, the profile will be configured with these settings.
-<!-- If this variable is undefined, authentication type of the profile will also be undefined as well and login will not be possible. -->
-   - `authType`: Authentication type of the profile. 0: None, 1: Static Username and Password, 2: LDAP Login, 3: SSO Login.
-   - `username`: The username for the profile if authentication type is 1 (Static Username and Password).
-   - `password`: The password for the profile if authentication type is 1 (Static Username and Password).
+   - `authType`: Authentication type of the profile. `none`: None, `static`: Static Username and Password, `ldap`: LDAP Login, `sso`: SSO Login. If this variable is not defined, the profile's authentication type will also be undefined and login will not be possible.
+   - `username`: The username for the profile if authentication type set to `static` (Static Username and Password).
+   - `password`: The password for the profile if authentication type set to `static` (Static Username and Password).
 - `appPath`: Indicates the file path to the application that will be uploaded to Appcircle Testing Distribution Profile.
 - `message`: Your message to testers, ensuring they receive important updates and information regarding the application.
 

@@ -12,11 +12,11 @@ module Fastlane
     class AppcircleTestingDistributionAction < Action
       VALID_EXTENSIONS = ['.apk', '.aab', '.ipa', '.zip']
       AUTH_TYPE_MAPPING = {
-        nil => 0,   # Undefined
-        '0' => 1,   # None
-        '1' => 3,   # Static Username and Password
-        '2' => 4,   # LDAP Login
-        '3' => 5,   # SSO Login
+        nil => 0, # Undefined
+        'none' => 1, # None
+        'static' => 3, # Static Username and Password
+        'ldap' => 4, # LDAP Login
+        'sso' => 5, # SSO Login
       }
       
       def self.run(params)
