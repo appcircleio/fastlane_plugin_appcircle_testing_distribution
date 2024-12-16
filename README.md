@@ -85,7 +85,8 @@ fastlane add_plugin appcircle_testing_distribution
     profileCreationSettings: {
       authType: "${AC_PROFILE_AUTH_TYPE}",
       username: "${AC_PROFILE_USERNAME}",
-      password: "${AC_PROFILE_PASSWORD}"
+      password: "${AC_PROFILE_PASSWORD}",
+      testingGroupNames: "AC_PROFILE_TESTING_GROUP_NAMES"
     },
     appPath: "$(AC_APP_PATH)",
     message: "$(AC_MESSAGE)",
@@ -99,6 +100,7 @@ fastlane add_plugin appcircle_testing_distribution
    - `authType`: Authentication type of the profile. `none`: None, `static`: Static Username and Password, `ldap`: LDAP Login, `sso`: SSO Login. If this variable is not defined, the profile's authentication type will also be undefined and login will not be possible.
    - `username`: The username for the profile if authentication type set to `static` (Static Username and Password).
    - `password`: The password for the profile if authentication type set to `static` (Static Username and Password).
+   - `testingGroupNames`: Uploaded versions will be automatically shared with these testing groups. Example format: `group1, group2, group3`.
 - `appPath`: Indicates the file path to the application that will be uploaded to Appcircle Testing Distribution Profile.
 - `message`: Your message to testers, ensuring they receive important updates and information regarding the application.
 
