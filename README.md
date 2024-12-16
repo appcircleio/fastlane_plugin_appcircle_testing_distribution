@@ -38,20 +38,7 @@ Testing distribution is the process of distributing test builds to designated te
 
 Overall, using testing distribution in mobile DevOps significantly enhances the efficiency, security, and effectiveness of the software development process, leading to better products and faster delivery times.
 
-## System Requirements
-
-**Compatible Agents:**
-
-- macOS 14.2, 14.5
-
-**Supported Version:**
-
-- Fastlane 2.222.0
-- Ruby 3.2.2
-
-Note: Currently, plugins are only compatible to use with **Appcircle Cloud**. **Self-hosted** support will be available in future releases.
-
-## Testing Distribution
+<!-- ## Testing Distribution
 
 In order to share your builds with testers, you can create distribution profiles and assign testing groups to the distribution profiles.
 
@@ -65,7 +52,7 @@ To generate a Personal API Token, follow these steps:
 2. You'll find the Personal API Token section in the top right corner.
 3. Press the "Generate Token" button to generate your first token.
 
-![Token Generation](<https://cdn.appcircle.io/docs/assets/image%20(164).png>)
+![Token Generation](<https://cdn.appcircle.io/docs/assets/image%20(164).png>) -->
 
 ## Getting Started with the Extension: Usage Guide
 
@@ -106,18 +93,17 @@ fastlane add_plugin appcircle_testing_distribution
 - `appPath`: Indicates the file path to the application that will be uploaded to Appcircle Testing Distribution Profile.
 - `message`: Your message to testers, ensuring they receive important updates and information regarding the application.
 
-> **Tip:**
-> Profile creation settings are only used when a new profile is created. If you need to update these settings, please go to the [profile settings](https://docs.appcircle.io/testing-distribution/create-or-select-a-distribution-profile#settings) in the Appcircle dashboard.
+## Docs
+For more information please refer to the documentation.
 
-### Leveraging Environment Variables
-
-Utilize environment variables seamlessly by substituting the parameters with `$(VARIABLE_NAME)` in your task inputs. The extension automatically retrieves values from the specified environment variables within your pipeline.
-
-**Ensure that this action is added after build steps have been completed.**
-
-**If multiple workflows start simultaneously, the order in which versions are shared in the Testing Distribution is determined by the execution order of the publish step. The version that completes its build and triggers the publish plugin first will be shared first, followed by the others in sequence.**
-
-Efficiently distribute test binaries or beta versions using Appcircle, featuring seamless IPA and APK distribution capabilities. Streamline your testing process with our versatile tool designed to optimize your distribution workflow. If you need support or more information, please [contact us](https://appcircle.io/contact?utm_source=fastlane&utm_medium=plugin&utm_campaign=testing_distribution)
+- [Setting Up Appcircle Testing Distribution Plugin](https://docs.appcircle.io/marketplace/fastlane/testing-distribution)
+   - [Discover Action](https://docs.appcircle.io/marketplace/fastlane/testing-distribution#discover-action)
+   - [System Requirements](https://docs.appcircle.io/marketplace/fastlane/testing-distribution#system-requirements)
+   - [User Permission Requirements](https://docs.appcircle.io/marketplace/fastlane/testing-distribution#user-permission-requirements)
+   - [How to Add the Appcircle Distribute Action to Your Pipeline](https://docs.appcircle.io/marketplace/fastlane/testing-distribution#how-to-add-the-appcircle-distribute-action-to-your-pipeline)
+   - [Distributing to Sub-Organizations](https://docs.appcircle.io/marketplace/fastlane/testing-distribution#distributing-to-sub-organizations)
+   - [Leveraging Environment Variables](https://docs.appcircle.io/marketplace/fastlane/testing-distribution#leveraging-environment-variables)
+- [References](https://docs.appcircle.io/marketplace/fastlane/testing-distribution#references)
 
 ## Issues and Feedback
 
@@ -126,9 +112,3 @@ For any other issues and feedback about this plugin, please submit it to this re
 ## Troubleshooting
 
 If you have trouble using plugins, check out the [Plugins Troubleshooting](https://docs.fastlane.tools/plugins/plugins-troubleshooting/) guide.
-
-## Reference
-
-- For details on generating an Appcircle Personal API Token, visit [Generating/Managing Personal API Tokens](https://docs.appcircle.io/appcircle-api/api-authentication#generatingmanaging-the-personal-api-tokens?utm_source=fastlane&utm_medium=plugin&utm_campaign=testing_distribution)
-
-- To create or learn more about Appcircle testing and distribution profiles, please refer to [Creating or Selecting a Distribution Profile](https://docs.appcircle.io/distribute/create-or-select-a-distribution-profile?utm_source=fastlane&utm_medium=plugin&utm_campaign=testing_distribution)
