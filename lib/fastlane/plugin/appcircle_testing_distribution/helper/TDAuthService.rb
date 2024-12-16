@@ -70,7 +70,7 @@ module TDAuthService
       return organization['id']
 
     else
-      raise "HTTP Request failed (#{response.code} #{response.message})"
+      raise "Error: (#{response.code} #{response.message})"
     end
   end
 end
