@@ -10,7 +10,7 @@ lane :test do
       authType: ENV["AC_PROFILE_AUTH_TYPE"],
       username: ENV["AC_PROFILE_USERNAME"],
       password: ENV["AC_PROFILE_PASSWORD"],
-      testingGroupNames: ENV["AC_PROFILE_TESTING_GROUPS"]
+      testingGroupNames: ENV["AC_PROFILE_TESTING_GROUP_NAMES"]
     },
     appPath: ENV["AC_APP_PATH"],
     message: ENV["AC_MESSAGE"],

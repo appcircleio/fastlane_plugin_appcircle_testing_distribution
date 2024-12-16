@@ -148,12 +148,17 @@ module TDUploadService
       raise "Something went wrong while fetching testing groups: #{e.message}."
     end
 
-    Fastlane::UI.important("Following testing groups couldn't be found and will be ignored: #{remainingGroupNames.to_a.join(', ')}.") unless remainingGroupNames.empty?
+    Fastlane::UI.user_error!("Following testing groups couldn't be found: #{remainingGroupNames.to_a.join(', ')}. Aborting profile creation...") unless remainingGroupNames.empty?
 
     return testingGroupIds
   end
 
   def self.create_profile(authToken, profileName, profileAuthType, profileUsername, profilePassword, profileTestingGroupNames)
+    # Get testing group IDs
+    if !profileTestingGroupNames&.empty?
+      profileTestingGroupIds = TDUploadService.get_testing_group_ids(authToken, profileTestingGroupNames)
+    end
+    
     # Create
     begin
       new_profile = TDUploadService.create_distribution_profile(
@@ -166,11 +171,6 @@ module TDUploadService
       profileId = new_profile['id']
     rescue => e
       raise "Something went wrong while creating a new profile: #{e.message}."
-    end
-
-    # Get testing group IDs
-    if !profileTestingGroupNames&.empty?
-      profileTestingGroupIds = TDUploadService.get_testing_group_ids(authToken, profileTestingGroupNames)
     end
 
     # Configure

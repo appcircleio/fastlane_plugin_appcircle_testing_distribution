@@ -86,7 +86,7 @@ fastlane add_plugin appcircle_testing_distribution
       authType: "${AC_PROFILE_AUTH_TYPE}",
       username: "${AC_PROFILE_USERNAME}",
       password: "${AC_PROFILE_PASSWORD}",
-      testingGroupNames: "AC_PROFILE_TESTING_GROUPS"
+      testingGroupNames: "AC_PROFILE_TESTING_GROUP_NAMES"
     },
     appPath: "$(AC_APP_PATH)",
     message: "$(AC_MESSAGE)",
