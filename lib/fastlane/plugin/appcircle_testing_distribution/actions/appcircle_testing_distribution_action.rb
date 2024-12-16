@@ -21,6 +21,7 @@ module Fastlane
       
       def self.run(params)
         personalAPIToken = params[:personalAPIToken]
+        subOrganizationName = params[:subOrganizationName]
         profileName = params[:profileName]
         createProfileIfNotExists = params[:createProfileIfNotExists] || false
         profileAuthType = params[:profileCreationSettings]&.dig(:authType)
@@ -38,7 +39,7 @@ module Fastlane
         profileAuthType = AUTH_TYPE_MAPPING[profileAuthType] # map input to API values
 
         # Auth
-        authToken = self.ac_login(personalAPIToken)
+        authToken = self.ac_login(personalAPIToken, subOrganizationName)
 
         # Get or create profile
         profileId = TDUploadService.get_profile_id(authToken, profileName)
@@ -54,11 +55,23 @@ module Fastlane
         self.ac_upload(authToken, appPath, profileId, message)
       end
 
-      def self.ac_login(personalAPIToken)
+      def self.ac_login(personalAPIToken, subOrganizationName)
         begin
+          token = ''
+
           user = TDAuthService.get_ac_token(pat: personalAPIToken)
           UI.success("Login is successful.")
-          return user.accessToken
+          token = user.accessToken
+          
+          if subOrganizationName
+            organization_id = TDAuthService.get_organization_id(access_token: token, name: subOrganizationName)
+            user = TDAuthService.get_ac_token(pat: personalAPIToken, sub_organization_id: organization_id)
+            UI.success("Switched to sub-organization: #{subOrganizationName}")
+            token = user.accessToken
+          end
+          
+          return token
+
         rescue => e
           UI.user_error!("Login failed: #{e.message}.")
         end
@@ -136,6 +149,12 @@ module Fastlane
                                        verify_block: proc do |value|
                                          UI.user_error!("Personal API Token cannot be empty. Please provide a valid access token.") unless (value and not value.empty?)
                                        end),
+
+          FastlaneCore::ConfigItem.new(key: :subOrganizationName,
+                                       env_name: "AC_SUB_ORGANIZATION_NAME",
+                                       description: "Optional: Sub-organization name for app distribution. Profiles will be created under root organization if not provided",
+                                       optional: true,
+                                       type: String),
           
           FastlaneCore::ConfigItem.new(key: :profileName,
                                        env_name: "AC_PROFILE_NAME",
@@ -148,12 +167,12 @@ module Fastlane
           
           FastlaneCore::ConfigItem.new(key: :createProfileIfNotExists,
                                        env_name: "AC_CREATE_PROFILE_IF_NOT_EXISTS",
-                                       description: "If the profile does not exist, create a new profile with the given name",
+                                       description: "Optional: If the profile does not exist, create a new profile with the given name",
                                        optional: true,
                                        type: Boolean),
           
           FastlaneCore::ConfigItem.new(key: :profileCreationSettings,
-                                       description: "Profile creation settings for the testing distribution profile",
+                                       description: "Optional: Profile creation settings for the testing distribution profile",
                                        optional: true,
                                        type: Hash,
                                        verify_block: proc do |value|
