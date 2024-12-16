@@ -40,9 +40,9 @@ Overall, using testing distribution in mobile DevOps significantly enhances the 
 
 <!-- ## Testing Distribution
 
-In order to share your builds with testers, you can create distribution profiles and assign testing groups to the distribution profiles.
+In order to share your builds with testers, you can create testing distribution profiles and assign testing groups to the profiles.
 
-![Distribution Profile](<https://cdn.appcircle.io/docs/assets/image%20(152).png>)
+![Testing Distribution Profile](<https://cdn.appcircle.io/docs/assets/image%20(152).png>)
 
 ## Generating/Managing the Personal API Tokens
 
@@ -56,7 +56,7 @@ To generate a Personal API Token, follow these steps:
 
 ## Getting Started with the Extension: Usage Guide
 
-To share your builds with testers, you can create distribution profiles and assign testing groups to these profiles.
+To share your builds with testers, you can create testing distribution profiles and assign testing groups to these profiles.
 
 This project is a [_fastlane_](https://github.com/fastlane/fastlane) plugin. To get started with `fastlane-plugin-appcircle_testing_distribution`, add it to your project by running:
 
