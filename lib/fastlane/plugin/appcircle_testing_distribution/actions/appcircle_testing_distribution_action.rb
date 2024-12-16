@@ -27,6 +27,7 @@ module Fastlane
         profileAuthType = params[:profileCreationSettings]&.dig(:authType)
         profileUsername = params[:profileCreationSettings]&.dig(:username)
         profilePassword = params[:profileCreationSettings]&.dig(:password)
+        profileTestingGroupNames= params[:profileCreationSettings]&.dig(:testingGroupNames)
         appPath = params[:appPath]
         message = params[:message]
 
@@ -47,7 +48,7 @@ module Fastlane
           raise "Error: The test profile '#{profileName}' could not be found. The option 'createProfileIfNotExists' is set to false, so no new profile was created. To automatically create a new profile if it doesn't exist, set 'createProfileIfNotExists' to true."
         elsif profileId.nil? && createProfileIfNotExists
           puts "The test profile '#{profileName}' could not be found. A new profile is being created..."
-          profileId = TDUploadService.create_profile(authToken, profileName, profileAuthType, profileUsername, profilePassword)
+          profileId = TDUploadService.create_profile(authToken, profileName, profileAuthType, profileUsername, profilePassword, profileTestingGroupNames)
         end
 
         # Upload package
@@ -178,12 +179,15 @@ module Fastlane
                                          value[:authType] ||= ENV["AC_PROFILE_AUTH_TYPE"]
                                          value[:username] ||= ENV["AC_PROFILE_USERNAME"]
                                          value[:password] ||= ENV["AC_PROFILE_PASSWORD"]
+                                         value[:testingGroupNames] ||= ENV["AC_PROFILE_TESTING_GROUP_NAMES"]
+                                         value[:testingGroupNames] = value[:testingGroupNames]&.split(",")&.map(&:strip)
                                          
                                          UI.user_error!("Invalid authType: '#{value[:authType]}'. Options: 0 (None), 1 (Static Username and Password), 2 (LDAP Login), 3 (SSO Login).") unless AUTH_TYPE_MAPPING.key?(value[:authType])
                                          if value[:authType] == 1
                                           UI.user_error!("username must be a String and at least 6 characters long.") unless value[:username].kind_of?(String) && value[:username].length >= 6
                                           UI.user_error!("password must be a String and at least 6 characters long.") unless value[:password].kind_of?(String) && value[:password].length >= 6
                                          end
+                                         UI.user_error!("testingGroupNames must be a non-empty string array. Ex: 'group1, group2, group3'.") unless value[:testingGroupNames].kind_of?(Array)
                                        end),
 
           FastlaneCore::ConfigItem.new(key: :appPath,
