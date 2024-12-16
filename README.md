@@ -94,8 +94,8 @@ fastlane add_plugin appcircle_testing_distribution
 
 - `personalAPIToken`: The Appcircle Personal API token is utilized to authenticate and secure access to Appcircle services, ensuring that only authorized users can perform actions within the platform.
 - `profileName`: Specifies the profile that will be used for uploading the app.
-- `createProfileIfNotExists`: Ensures that a user profile is automatically created if it does not already exist; if the profile name already exists, the app will be uploaded to that existing profile instead.
-- `profileCreationSettings`: If `createProfileIfNotExists` is `true` and a new profile being created, the profile will be configured with these settings.
+- `createProfileIfNotExists` (optional): Ensures that a testing distribution profile is automatically created if it does not already exist; if the profile name already exists, the app will be uploaded to that existing profile instead.
+- `profileCreationSettings` (optional): If `createProfileIfNotExists` is `true` and a new profile being created, the profile will be configured with these settings.
    - `authType`: Authentication type of the profile. `none`: None, `static`: Static Username and Password, `ldap`: LDAP Login, `sso`: SSO Login. If this variable is not defined, the profile's authentication type will also be undefined and login will not be possible.
    - `username`: The username for the profile if authentication type set to `static` (Static Username and Password).
    - `password`: The password for the profile if authentication type set to `static` (Static Username and Password).

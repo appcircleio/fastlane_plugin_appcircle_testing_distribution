@@ -31,7 +31,7 @@ module Fastlane
 
         file_extension = File.extname(appPath).downcase
         unless VALID_EXTENSIONS.include?(file_extension)
-          UI.user_error!("Invalid file extension: #{file_extension}. For Android, use .apk or .aab. For iOS, use .ipa or .zip(.xcarchive).")
+          UI.user_error!("Invalid file extension: '#{file_extension}'. For Android, use .apk or .aab. For iOS, use .ipa or .zip(.xcarchive).")
         end
         
         profileAuthType = AUTH_TYPE_MAPPING[profileAuthType] # map input to API values
@@ -59,7 +59,7 @@ module Fastlane
           UI.success("Login is successful.")
           return user.accessToken
         rescue => e
-          UI.user_error!("Login failed: #{e.message}")
+          UI.user_error!("Login failed: #{e.message}.")
         end
       end
       
@@ -77,11 +77,11 @@ module Fastlane
             elsif stateValue == 3
               return true
             else
-              UI.error("Task Id #{taskId} failed with state value #{stateValue}")
-              raise "Upload could not be completed successfully"
+              UI.error("Task Id #{taskId} failed with state value #{stateValue}.")
+              raise "Upload could not be completed successfully."
             end
           else
-            raise "Upload failed with response code #{response.code} and message '#{response.message}'"
+            raise "Upload failed with response code #{response.code} and message '#{response.message}'."
           end
         end
       end
@@ -100,11 +100,11 @@ module Fastlane
           result = self.checkTaskStatus(token, response['taskId'])
 
           if result
-            UI.success("#{appPath} Uploaded to profile id #{profileID} successfully  🎉")
+            UI.success("#{appPath} uploaded to profile ID #{profileID} successfully  🎉")
           end
         rescue => e
           status_code = e.respond_to?(:response) && e.response ? e.response.code : 'unknown'
-          UI.user_error!("Upload failed with status code #{status_code}, with message '#{e.message}'")
+          UI.user_error!("Upload failed with status code #{status_code}, with message '#{e.message}'.")
         end
       end
 
@@ -122,7 +122,7 @@ module Fastlane
 
       def self.details
         # Optional:
-        "Appcircle simplifies the distribution of builds to test teams with an extensive platform for managing and tracking applications, versions, testers, and teams. Appcircle integrates with enterprise authentication mechanisms such as LDAP and SSO, ensuring secure distribution of testing packages. Learn more about Appcircle testing distribution"
+        "Appcircle simplifies the distribution of builds to test teams with an extensive platform for managing and tracking applications, versions, testers, and teams. Appcircle integrates with enterprise authentication mechanisms such as LDAP and SSO, ensuring secure distribution of testing packages. Learn more about Appcircle testing distribution."
       end
 
       def self.available_options
@@ -133,16 +133,16 @@ module Fastlane
                                        optional: false,
                                        type: String,
                                        verify_block: proc do |value|
-                                         UI.user_error!("Personal API Token cannot be empty. Please provide a valid access token") unless (value and not value.empty?)
+                                         UI.user_error!("Personal API Token cannot be empty. Please provide a valid access token.") unless (value and not value.empty?)
                                        end),
           
           FastlaneCore::ConfigItem.new(key: :profileName,
                                        env_name: "AC_PROFILE_NAME",
-                                       description: "Enter the profile name of the Appcircle distribution profile. This name uniquely identifies the profile under which your applications will be distributed",
+                                       description: "Enter the profile name of the Appcircle testing distribution profile. This name uniquely identifies the profile under which your applications will be distributed",
                                        optional: false,
                                        type: String,
                                        verify_block: proc do |value|
-                                         UI.user_error!("Distribution profile name cannot be empty. Please provide a distribution profile name") unless (value and not value.empty?)
+                                         UI.user_error!("Profile name cannot be empty. Please provide a testing distribution profile name.") unless (value and not value.empty?)
                                        end),
           
           FastlaneCore::ConfigItem.new(key: :createProfileIfNotExists,
@@ -152,7 +152,7 @@ module Fastlane
                                        type: Boolean),
           
           FastlaneCore::ConfigItem.new(key: :profileCreationSettings,
-                                       description: "Profile creation settings for the distribution profile",
+                                       description: "Profile creation settings for the testing distribution profile",
                                        optional: true,
                                        type: Hash,
                                        verify_block: proc do |value|
@@ -162,8 +162,8 @@ module Fastlane
                                          
                                          UI.user_error!("Invalid authType: '#{value[:authType]}'. Options: 0 (None), 1 (Static Username and Password), 2 (LDAP Login), 3 (SSO Login).") unless AUTH_TYPE_MAPPING.key?(value[:authType])
                                          if value[:authType] == 1
-                                          UI.user_error!("username must be a String and at least 6 characters long") unless value[:username].kind_of?(String) && value[:username].length >= 6
-                                          UI.user_error!("password must be a String and at least 6 characters long") unless value[:password].kind_of?(String) && value[:password].length >= 6
+                                          UI.user_error!("username must be a String and at least 6 characters long.") unless value[:username].kind_of?(String) && value[:username].length >= 6
+                                          UI.user_error!("password must be a String and at least 6 characters long.") unless value[:password].kind_of?(String) && value[:password].length >= 6
                                          end
                                        end),
 
@@ -173,7 +173,7 @@ module Fastlane
                                        optional: false,
                                        type: String,
                                        verify_block: proc do |value|
-                                         UI.user_error!("Application file path cannot be empty. Please provide a valid application file path") unless (value and not value.empty?)
+                                         UI.user_error!("Application file path cannot be empty. Please provide a valid application file path.") unless (value and not value.empty?)
                                        end),
 
           FastlaneCore::ConfigItem.new(key: :message,
@@ -182,7 +182,7 @@ module Fastlane
                                        optional: false,
                                        type: String,
                                        verify_block: proc do |value|
-                                         UI.user_error!("Message field cannot be empty. Please provide a valid message") unless (value and not value.empty?)
+                                         UI.user_error!("Message field cannot be empty. Please provide a valid message.") unless (value and not value.empty?)
                                        end)
         ]
       end

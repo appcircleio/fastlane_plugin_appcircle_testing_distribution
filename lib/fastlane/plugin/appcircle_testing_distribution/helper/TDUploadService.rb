@@ -104,7 +104,7 @@ module TDUploadService
         end
       end
     rescue => e
-      raise "Something went wrong while fetching profiles: #{e.message}"
+      raise "Something went wrong while fetching profiles: #{e.message}."
     end
 
     return profileId
@@ -122,7 +122,7 @@ module TDUploadService
       end
       profileId = new_profile['id']
     rescue => e
-      raise "Something went wrong while creating a new profile: #{e.message}"
+      raise "Something went wrong while creating a new profile: #{e.message}."
     end
 
     # Configure
@@ -140,7 +140,7 @@ module TDUploadService
       end
       profileId = configured_profile['id'] # Should be the same as before
     rescue => e
-      raise "Something went wrong while configuring the new profile: #{e.message}"
+      raise "Something went wrong while configuring the new profile: #{e.message}."
     end
 
     return profileId

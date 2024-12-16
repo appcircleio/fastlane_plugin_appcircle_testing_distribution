@@ -43,7 +43,7 @@ module TDAuthService
 
       return user
     else
-      raise "HTTP Request failed (#{response.code} #{response.message})"
+      raise "Error: (#{response.code} #{response.message})."
     end
   end
 end
