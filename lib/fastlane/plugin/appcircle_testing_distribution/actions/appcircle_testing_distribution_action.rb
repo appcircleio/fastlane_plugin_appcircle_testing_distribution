@@ -45,7 +45,7 @@ module Fastlane
         profileId = TDUploadService.get_profile_id(authToken, profileName)
 
         if profileId.nil? && !createProfileIfNotExists
-          UI.user_error! "Error: The test profile '#{profileName}' could not be found. The option 'createProfileIfNotExists' is set to false, so no new profile was created. To automatically create a new profile if it doesn't exist, set 'createProfileIfNotExists' to true."
+          raise "Error: The test profile '#{profileName}' could not be found. The option 'createProfileIfNotExists' is set to false, so no new profile was created. To automatically create a new profile if it doesn't exist, set 'createProfileIfNotExists' to true."
         elsif profileId.nil? && createProfileIfNotExists
           UI.message "The test profile '#{profileName}' could not be found. A new profile is being created..."
           profileId = TDUploadService.create_profile(authToken, profileName, profileAuthType, profileUsername, profilePassword, profileTestingGroupNames)
@@ -92,10 +92,10 @@ module Fastlane
               return true
             else
               UI.error("Task Id #{taskId} failed with state value #{stateValue}.")
-              UI.error "Upload could not be completed successfully."
+              raise "Upload could not be completed successfully."
             end
           else
-            UI.error "Upload failed with response code #{response.code} and message '#{response.message}'."
+            raise "Upload failed with response code #{response.code} and message '#{response.message}'."
           end
         end
       end
