@@ -185,7 +185,7 @@ module Fastlane
                                          value[:testingGroupNames] = value[:testingGroupNames]&.split(",")&.map(&:strip)
                                          
                                          UI.user_error!("Invalid authType: '#{value[:authType]}'. Options: 0 (None), 1 (Static Username and Password), 2 (LDAP Login), 3 (SSO Login).") unless AUTH_TYPE_MAPPING.key?(value[:authType])
-                                         if value[:authType] == 1
+                                         if value[:authType] == 'static'
                                           UI.user_error!("username must be a String and at least 6 characters long.") unless value[:username].kind_of?(String) && value[:username].length >= 6
                                           UI.user_error!("password must be a String and at least 6 characters long.") unless value[:password].kind_of?(String) && value[:password].length >= 6
                                          end
