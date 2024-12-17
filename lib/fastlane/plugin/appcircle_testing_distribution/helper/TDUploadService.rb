@@ -94,15 +94,22 @@ module TDUploadService
       content_type: :json,
       accept: 'application/json-patch+json'
     }
-    payload = {
-      settings: {
+
+    ### Construct the payload
+    payload = {}
+
+    settings_payload = {
         authenticationType: auth_type,
         username: username,
-        password: password,
-      },
-      testingGroupIds: testing_group_ids
-    }.to_json
-  
+        password: password
+    }.compact
+
+    payload[:settings] = settings_payload unless settings_payload.empty?
+    payload[:testingGroupIds] = testing_group_ids unless testing_group_ids&.empty?
+
+    payload = payload.compact.to_json
+    ###
+
     begin
       response = RestClient.patch(url, payload, headers)
       JSON.parse(response.body)
@@ -141,14 +148,14 @@ module TDUploadService
       groups.each do |group|
         if remainingGroupNames.include?(group["name"])
           testingGroupIds.push(group['id'])
-          remainingGroupNames.delete(group["name"])        
+          remainingGroupNames.delete(group["name"])
         end
       end
     rescue => e
       raise "Something went wrong while fetching testing groups: #{e.message}."
     end
 
-    Fastlane::UI.user_error!("Following testing groups couldn't be found: #{remainingGroupNames.to_a.join(', ')}. Aborting profile creation...") unless remainingGroupNames.empty?
+    raise "Following testing groups couldn't be found: '#{remainingGroupNames.to_a.join(', ')}'. Aborting profile creation..." unless remainingGroupNames.empty?
 
     return testingGroupIds
   end
