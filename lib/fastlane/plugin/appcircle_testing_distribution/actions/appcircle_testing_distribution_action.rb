@@ -44,7 +44,9 @@ module Fastlane
         # Get or create profile
         profileId = TDUploadService.get_profile_id(authToken, profileName)
 
-        if profileId.nil? && !createProfileIfNotExists
+        if profileId
+          UI.message "The test profile '#{profileName}' was found with ID: #{profileId}."
+        elsif profileId.nil? && !createProfileIfNotExists
           raise "Error: The test profile '#{profileName}' could not be found. The option 'createProfileIfNotExists' is set to false, so no new profile was created. To automatically create a new profile if it doesn't exist, set 'createProfileIfNotExists' to true."
         elsif profileId.nil? && createProfileIfNotExists
           UI.message "The test profile '#{profileName}' could not be found. A new profile is being created..."
@@ -52,7 +54,7 @@ module Fastlane
         end
 
         # Upload package
-        self.ac_upload(authToken, appPath, profileId, message)
+        self.ac_upload(authToken, appPath, profileId, profileName, message)
       end
 
       def self.ac_login(personalAPIToken, subOrganizationName)
@@ -108,13 +110,13 @@ module Fastlane
         http.request(request)
       end
 
-      def self.ac_upload(token, appPath, profileID, message)
+      def self.ac_upload(token, appPath, profileID, profileName, message)
         begin
           response = TDUploadService.upload_artifact(token: token, message: message, app: appPath, dist_profile_id: profileID)
           result = self.checkTaskStatus(token, response['taskId'])
 
           if result
-            UI.success("#{appPath} uploaded to profile ID #{profileID} successfully  🎉")
+            UI.success("#{appPath} uploaded to profile '#{profileName}' successfully  🎉")
           end
         rescue => e
           status_code = e.respond_to?(:response) && e.response ? e.response.code : 'unknown'
