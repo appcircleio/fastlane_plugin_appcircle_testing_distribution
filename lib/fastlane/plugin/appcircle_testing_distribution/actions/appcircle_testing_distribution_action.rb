@@ -12,11 +12,10 @@ module Fastlane
     class AppcircleTestingDistributionAction < Action
       VALID_EXTENSIONS = ['.apk', '.aab', '.ipa', '.zip']
       AUTH_TYPE_MAPPING = {
-        nil => 0, # Undefined
         'none' => 1, # None
         'static' => 3, # Static Username and Password
         'ldap' => 4, # LDAP Login
-        'sso' => 5, # SSO Login
+        'sso' => 5 # SSO Login
       }
       
       def self.run(params)
@@ -24,17 +23,15 @@ module Fastlane
         subOrganizationName = params[:subOrganizationName]
         profileName = params[:profileName]
         createProfileIfNotExists = params[:createProfileIfNotExists] || false
-        profileAuthType = params[:profileCreationSettings]&.dig(:authType)
-        profileUsername = params[:profileCreationSettings]&.dig(:username)
-        profilePassword = params[:profileCreationSettings]&.dig(:password)
-        profileTestingGroupNames= params[:profileCreationSettings]&.dig(:testingGroupNames)
+        #
+        profileCreationSettings = params[:profileCreationSettings]
+        profileAuthType = profileCreationSettings&.dig(:authType)
+        profileUsername = profileCreationSettings&.dig(:username)
+        profilePassword = profileCreationSettings&.dig(:password)
+        profileTestingGroupNames= profileCreationSettings&.dig(:testingGroupNames)
+        #
         appPath = params[:appPath]
         message = params[:message]
-
-        file_extension = File.extname(appPath).downcase
-        unless VALID_EXTENSIONS.include?(file_extension)
-          UI.user_error!("Invalid file extension: '#{file_extension}'. For Android, use .apk or .aab. For iOS, use .ipa or .zip(.xcarchive).")
-        end
         
         profileAuthType = AUTH_TYPE_MAPPING[profileAuthType] # map input to API values
 
@@ -42,16 +39,7 @@ module Fastlane
         authToken = self.ac_login(personalAPIToken, subOrganizationName)
 
         # Get or create profile
-        profileId = TDUploadService.get_profile_id(authToken, profileName)
-
-        if profileId
-          UI.message "The test profile '#{profileName}' was found with ID: #{profileId}."
-        elsif profileId.nil? && !createProfileIfNotExists
-          raise "Error: The test profile '#{profileName}' could not be found. The option 'createProfileIfNotExists' is set to false, so no new profile was created. To automatically create a new profile if it doesn't exist, set 'createProfileIfNotExists' to true."
-        elsif profileId.nil? && createProfileIfNotExists
-          UI.message "The test profile '#{profileName}' could not be found. A new profile is being created..."
-          profileId = TDUploadService.create_profile(authToken, profileName, profileAuthType, profileUsername, profilePassword, profileTestingGroupNames)
-        end
+        profileId = self.ac_get_or_create_profile(authToken, profileName, createProfileIfNotExists, profileCreationSettings, profileAuthType, profileUsername, profilePassword, profileTestingGroupNames)
 
         # Upload package
         self.ac_upload(authToken, appPath, profileId, profileName, message)
@@ -68,20 +56,60 @@ module Fastlane
           if subOrganizationName
             organization_id = TDAuthService.get_organization_id(access_token: token, name: subOrganizationName)
             user = TDAuthService.get_ac_token(pat: personalAPIToken, sub_organization_id: organization_id)
-            UI.success("Switched to sub-organization: #{subOrganizationName}")
+            UI.message("Switched to sub-organization: #{subOrganizationName}")
             token = user.accessToken
           end
           
           return token
 
         rescue => e
-          UI.user_error!("Login failed: #{e.message}.")
+          UI.user_error!("Login failed: \"#{e.message}\".")
         end
       end
-      
+
+      def self.ac_get_or_create_profile(authToken, profileName, createProfileIfNotExists, profileCreationSettings, profileAuthType, profileUsername, profilePassword, profileTestingGroupNames)
+        begin
+          profileId = TDUploadService.get_profile_id(authToken, profileName)
+
+          if profileId
+            UI.message("Profile '#{profileName}' found with ID: #{profileId}.")
+            UI.important("Warning: Profile '#{profileName}' already exists, so the provided profile creation settings will be ignored. To update the profile settings, please use the Appcircle web interface.") if profileCreationSettings
+
+          elsif profileId.nil? && !createProfileIfNotExists
+            UI.user_error!("Error: Profile '#{profileName}' not found. The option 'createProfileIfNotExists' is set to false, so a new profile was not created. To automatically create a new profile when it doesn't exist, set 'createProfileIfNotExists' to true.")
+          elsif profileId.nil? && createProfileIfNotExists
+            UI.message("Profile '#{profileName}' not found. Creating the new profile...")
+            profileId = TDUploadService.create_profile(authToken, profileName, profileAuthType, profileUsername, profilePassword, profileTestingGroupNames)
+          end
+
+          return profileId
+          
+        rescue => e
+          UI.user_error!("Couldn't get the profile: \"#{e.message}\".")
+        end
+      end
+
+      def self.ac_upload(token, appPath, profileID, profileName, message)
+        begin
+          UI.message("Upload started.")
+          response = TDUploadService.upload_artifact(token: token, message: message, app: appPath, dist_profile_id: profileID)
+          result = self.checkTaskStatus(token, response['taskId'])
+
+          if result
+            UI.success("#{appPath} uploaded to profile '#{profileName}' successfully  🎉")
+          end
+        rescue => e
+          status_code = e.respond_to?(:response) && e.response ? e.response.code : 'unknown'
+          UI.user_error!("Upload failed with status code '#{status_code}', with message \"#{e.message}\".")
+        end
+      end
+
       def self.checkTaskStatus(authToken, taskId)
         uri = URI.parse("https://api.appcircle.io/task/v1/tasks/#{taskId}")
+        
         check_interval = 1
+        # timeout = 2 * 60 * 60 # 2 hours in seconds
+        # start_time = Time.now
       
         loop do
           response = self.send_request(uri, authToken)
@@ -94,11 +122,15 @@ module Fastlane
               return true
             else
               UI.error("Task Id #{taskId} failed with state value #{stateValue}.")
-              raise "Upload could not be completed successfully."
+              UI.user_error!("Upload could not be completed successfully.")
             end
           else
-            raise "Upload failed with response code #{response.code} and message '#{response.message}'."
+            UI.user_error!("Upload failed with response code #{response.code} and message '#{response.message}'.")
           end
+
+          # if Time.now - start_time > timeout
+          #   UI.user_error!("Task Id #{taskId} timed out after 2 hours.")
+          # end
         end
       end
 
@@ -108,20 +140,6 @@ module Fastlane
         request = Net::HTTP::Get.new(uri.request_uri)
         request["Authorization"] = "Bearer #{access_token}"
         http.request(request)
-      end
-
-      def self.ac_upload(token, appPath, profileID, profileName, message)
-        begin
-          response = TDUploadService.upload_artifact(token: token, message: message, app: appPath, dist_profile_id: profileID)
-          result = self.checkTaskStatus(token, response['taskId'])
-
-          if result
-            UI.success("#{appPath} uploaded to profile '#{profileName}' successfully  🎉")
-          end
-        rescue => e
-          status_code = e.respond_to?(:response) && e.response ? e.response.code : 'unknown'
-          UI.user_error!("Upload failed with status code #{status_code}, with message '#{e.message}'.")
-        end
       end
 
       def self.description
@@ -149,7 +167,7 @@ module Fastlane
                                        optional: false,
                                        type: String,
                                        verify_block: proc do |value|
-                                         UI.user_error!("Personal API Token cannot be empty. Please provide a valid access token.") unless (value and not value.empty?)
+                                         UI.user_error!("Personal API Token cannot be empty. Please provide a valid access token.") unless value && !value.empty?
                                        end),
 
           FastlaneCore::ConfigItem.new(key: :subOrganizationName,
@@ -164,7 +182,7 @@ module Fastlane
                                        optional: false,
                                        type: String,
                                        verify_block: proc do |value|
-                                         UI.user_error!("Profile name cannot be empty. Please provide a testing distribution profile name.") unless (value and not value.empty?)
+                                         UI.user_error!("Profile name cannot be empty. Please provide a testing distribution profile name.") unless value && !value.empty?
                                        end),
           
           FastlaneCore::ConfigItem.new(key: :createProfileIfNotExists,
@@ -178,18 +196,29 @@ module Fastlane
                                        optional: true,
                                        type: Hash,
                                        verify_block: proc do |value|
+                                         # Get values
                                          value[:authType] ||= ENV["AC_PROFILE_AUTH_TYPE"]
                                          value[:username] ||= ENV["AC_PROFILE_USERNAME"]
                                          value[:password] ||= ENV["AC_PROFILE_PASSWORD"]
                                          value[:testingGroupNames] ||= ENV["AC_PROFILE_TESTING_GROUP_NAMES"]
-                                         value[:testingGroupNames] = value[:testingGroupNames]&.split(",")&.map(&:strip)
-                                         
-                                         UI.user_error!("Invalid authType: '#{value[:authType]}'. Options: 0 (None), 1 (Static Username and Password), 2 (LDAP Login), 3 (SSO Login).") unless AUTH_TYPE_MAPPING.key?(value[:authType])
-                                         if value[:authType] == 'static'
-                                          UI.user_error!("username must be a String and at least 6 characters long.") unless value[:username].kind_of?(String) && value[:username].length >= 6
-                                          UI.user_error!("password must be a String and at least 6 characters long.") unless value[:password].kind_of?(String) && value[:password].length >= 6
+
+                                         # Parse and Validate
+                                         if value[:authType] && !value[:authType].empty?
+                                           UI.user_error!("Invalid authType: '#{value[:authType]}'. Options: 'none' (None), 'static' (Static Username and Password), 'ldap' (LDAP Login), 'sso' (SSO Login).") unless AUTH_TYPE_MAPPING.key?(value[:authType])
+                                           
+                                           if value[:authType] == 'static'
+                                             UI.user_error!("username must be a String and at least 6 characters long.") unless value[:username].kind_of?(String) && value[:username].length >= 6
+                                             UI.user_error!("password must be a String and at least 6 characters long.") unless value[:password].kind_of?(String) && value[:password].length >= 6
+                                           else
+                                             value[:username] = nil
+                                             value[:password] = nil
+                                           end
                                          end
-                                         UI.user_error!("testingGroupNames must be a non-empty string array. Ex: 'group1, group2, group3'.") unless value[:testingGroupNames].kind_of?(Array)
+
+                                         if value[:testingGroupNames] && !value[:testingGroupNames].empty?
+                                           value[:testingGroupNames] = value[:testingGroupNames].to_s.split(",").map(&:strip)
+                                           UI.user_error!("testingGroupNames must be a string array. Ex: 'group1, group2, group3'.") unless value[:testingGroupNames].kind_of?(Array)
+                                         end
                                        end),
 
           FastlaneCore::ConfigItem.new(key: :appPath,
@@ -198,16 +227,21 @@ module Fastlane
                                        optional: false,
                                        type: String,
                                        verify_block: proc do |value|
-                                         UI.user_error!("Application file path cannot be empty. Please provide a valid application file path.") unless (value and not value.empty?)
+                                         UI.user_error!("Application file path cannot be empty. Please provide a valid application file path.") unless value && !value.empty?
+
+                                         file_extension = File.extname(value).downcase
+                                         unless VALID_EXTENSIONS.include?(file_extension)
+                                           UI.user_error!("Invalid file extension: '#{file_extension}'. For Android, use .apk or .aab. For iOS, use .ipa or .zip(.xcarchive).")
+                                         end
                                        end),
 
           FastlaneCore::ConfigItem.new(key: :message,
                                        env_name: "AC_MESSAGE",
-                                       description: "Optional message to include with the distribution to provide additional information to testers or users receiving the build",
+                                       description: "Message to include with the distribution to provide additional information to testers or users receiving the build",
                                        optional: false,
                                        type: String,
                                        verify_block: proc do |value|
-                                         UI.user_error!("Message field cannot be empty. Please provide a valid message.") unless (value and not value.empty?)
+                                         UI.user_error!("Message field cannot be empty. Please provide a message.") unless value && !value.empty?
                                        end)
         ]
       end
