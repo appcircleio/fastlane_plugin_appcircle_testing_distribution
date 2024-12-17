@@ -66,18 +66,18 @@ fastlane add_plugin appcircle_testing_distribution
 
 ```yml
   appcircle_testing_distribution(
-    personalAPIToken: "$(AC_PERSONAL_API_TOKEN)",
-    subOrganizationName: "${AC_SUB_ORGANIZATION_NAME}",
-    profileName: "$(AC_PROFILE_NAME)",
-    createProfileIfNotExists: "${AC_CREATE_PROFILE_IF_NOT_EXISTS}",
+    personalAPIToken: ENV["AC_ACCESS_TOKEN"],
+    subOrganizationName: ENV["AC_SUB_ORGANIZATION_NAME"],
+    profileName: ENV["AC_PROFILE_NAME"],
+    createProfileIfNotExists: ENV["AC_CREATE_PROFILE_IF_NOT_EXISTS"],
     profileCreationSettings: {
-      authType: "${AC_PROFILE_AUTH_TYPE}",
-      username: "${AC_PROFILE_USERNAME}",
-      password: "${AC_PROFILE_PASSWORD}",
-      testingGroupNames: "AC_PROFILE_TESTING_GROUP_NAMES"
+      authType: ENV["AC_PROFILE_AUTH_TYPE"],
+      username: ENV["AC_PROFILE_USERNAME"],
+      password: ENV["AC_PROFILE_PASSWORD"],
+      testingGroupNames: ENV["AC_PROFILE_TESTING_GROUP_NAMES"]
     },
-    appPath: "$(AC_APP_PATH)",
-    message: "$(AC_MESSAGE)",
+    appPath: ENV["AC_APP_PATH"],
+    message: ENV["AC_MESSAGE"]
   )
 ```
 
