@@ -10,67 +10,127 @@ require_relative '../helper/TDUploadService'
 module Fastlane
   module Actions
     class AppcircleTestingDistributionAction < Action
+      VALID_EXTENSIONS = ['.apk', '.aab', '.ipa', '.zip']
+      AUTH_TYPE_MAPPING = {
+        'none' => 1, # None
+        'static' => 3, # Static Username and Password
+        'ldap' => 4, # LDAP Login
+        'sso' => 5 # SSO Login
+      }
+      
       def self.run(params)
         personalAPIToken = params[:personalAPIToken]
+        subOrganizationName = params[:subOrganizationName]
         profileName = params[:profileName]
+        createProfileIfNotExists = params[:createProfileIfNotExists] || false
+        #
+        profileCreationSettings = params[:profileCreationSettings]
+        profileAuthType = profileCreationSettings&.dig(:authType)
+        profileUsername = profileCreationSettings&.dig(:username)
+        profilePassword = profileCreationSettings&.dig(:password)
+        profileTestingGroupNames= profileCreationSettings&.dig(:testingGroupNames)
+        #
         appPath = params[:appPath]
         message = params[:message]
-        createProfileIfNotExists = params[:createProfileIfNotExists]
+        
+        profileAuthType = AUTH_TYPE_MAPPING[profileAuthType] # map input to API values
 
-        valid_extensions = ['.apk', '.aab', '.ipa', '.zip']
+        # Auth
+        authToken = self.ac_login(personalAPIToken, subOrganizationName)
 
-        file_extension = File.extname(appPath).downcase
-        unless valid_extensions.include?(file_extension)
-          UI.user_error!("Invalid file extension: #{file_extension}. For Android, use .apk or .aab. For iOS, use .ipa or .zip(.xcarchive).")
-        end
+        # Get or create profile
+        profileId = self.ac_get_or_create_profile(authToken, profileName, createProfileIfNotExists, profileCreationSettings, profileAuthType, profileUsername, profilePassword, profileTestingGroupNames)
 
-        if personalAPIToken.nil?
-          UI.user_error!("Personal API Token is required to authenticate connections to Appcircle services. Please provide a valid access token")
-        elsif profileName.nil?
-          UI.user_error!("Distribution profile name is required to distribute applications. Please provide a distribution profile name")
-        elsif appPath.nil?
-          UI.user_error!("Application file path is required to distribute applications. Please provide a valid application file path")
-        elsif message.nil?
-          UI.user_error!("Message field is required. Please provide a valid message")
-        end
-
-
-        authToken = self.ac_login(personalAPIToken)
-
-        profileId = TDUploadService.get_profile_id(authToken, profileName, createProfileIfNotExists)
-        self.ac_upload(authToken, appPath, profileId, message)
+        # Upload package
+        self.ac_upload(authToken, appPath, profileId, profileName, message)
       end
 
-      def self.ac_login(personalAPIToken)
+      def self.ac_login(personalAPIToken, subOrganizationName)
         begin
+          token = ''
+
           user = TDAuthService.get_ac_token(pat: personalAPIToken)
           UI.success("Login is successful.")
-          return user.accessToken
+          token = user.accessToken
+          
+          if subOrganizationName
+            organization_id = TDAuthService.get_organization_id(access_token: token, name: subOrganizationName)
+            user = TDAuthService.get_ac_token(pat: personalAPIToken, sub_organization_id: organization_id)
+            UI.message("Switched to sub-organization: #{subOrganizationName}")
+            token = user.accessToken
+          end
+          
+          return token
+
         rescue => e
-          UI.user_error!("Login failed: #{e.message}")
+          UI.user_error!("Login failed: \"#{e.message}\".")
         end
       end
-      
+
+      def self.ac_get_or_create_profile(authToken, profileName, createProfileIfNotExists, profileCreationSettings, profileAuthType, profileUsername, profilePassword, profileTestingGroupNames)
+        begin
+          profileId = TDUploadService.get_profile_id(authToken, profileName)
+
+          if profileId
+            UI.message("Profile '#{profileName}' found with ID: #{profileId}.")
+            UI.important("Warning: Profile '#{profileName}' already exists, so the provided profile creation settings will be ignored. To update the profile settings, please use the Appcircle web interface.") if profileCreationSettings
+
+          elsif profileId.nil? && !createProfileIfNotExists
+            UI.user_error!("Error: Profile '#{profileName}' not found. The option 'createProfileIfNotExists' is set to false, so a new profile was not created. To automatically create a new profile when it doesn't exist, set 'createProfileIfNotExists' to true.")
+          elsif profileId.nil? && createProfileIfNotExists
+            UI.message("Profile '#{profileName}' not found. Creating the new profile...")
+            profileId = TDUploadService.create_profile(authToken, profileName, profileAuthType, profileUsername, profilePassword, profileTestingGroupNames)
+          end
+
+          return profileId
+          
+        rescue => e
+          UI.user_error!("Couldn't get the profile: \"#{e.message}\".")
+        end
+      end
+
+      def self.ac_upload(token, appPath, profileID, profileName, message)
+        begin
+          UI.message("Upload started.")
+          response = TDUploadService.upload_artifact(token: token, message: message, app: appPath, dist_profile_id: profileID)
+          result = self.checkTaskStatus(token, response['taskId'])
+
+          if result
+            UI.success("#{appPath} uploaded to profile '#{profileName}' successfully  🎉")
+          end
+        rescue => e
+          status_code = e.respond_to?(:response) && e.response ? e.response.code : 'unknown'
+          UI.user_error!("Upload failed with status code '#{status_code}', with message \"#{e.message}\".")
+        end
+      end
+
       def self.checkTaskStatus(authToken, taskId)
         uri = URI.parse("https://api.appcircle.io/task/v1/tasks/#{taskId}")
-        timeout = 1
         
-        response = self.send_request(uri, authToken)
-        if response.is_a?(Net::HTTPSuccess)
-          stateValue = JSON.parse(response.body)["stateValue"]
-          
-          if stateValue == 1
-            sleep(1)
-            return checkTaskStatus(authToken, taskId)
-          end
-          if stateValue == 3
-            return true
+        check_interval = 1
+        # timeout = 2 * 60 * 60 # 2 hours in seconds
+        # start_time = Time.now
+      
+        loop do
+          response = self.send_request(uri, authToken)
+          if response.is_a?(Net::HTTPSuccess)
+            stateValue = JSON.parse(response.body)["stateValue"]
+      
+            if stateValue == 1
+              sleep(check_interval)
+            elsif stateValue == 3
+              return true
+            else
+              UI.error("Task Id #{taskId} failed with state value #{stateValue}.")
+              UI.user_error!("Upload could not be completed successfully.")
+            end
           else
-            UI.error("Task Id #{taskId} failed with state value #{stateValue}")
-            raise "Upload could not completed successfully"
+            UI.user_error!("Upload failed with response code #{response.code} and message '#{response.message}'.")
           end
-        else
-          raise "Upload failed with response code #{response.code} and message '#{response.message}'"
+
+          # if Time.now - start_time > timeout
+          #   UI.user_error!("Task Id #{taskId} timed out after 2 hours.")
+          # end
         end
       end
 
@@ -80,20 +140,6 @@ module Fastlane
         request = Net::HTTP::Get.new(uri.request_uri)
         request["Authorization"] = "Bearer #{access_token}"
         http.request(request)
-      end
-
-      def self.ac_upload(token, appPath, profileID, message)
-        begin
-          response = TDUploadService.upload_artifact(token: token, message: message, app: appPath, dist_profile_id: profileID)
-          result = self.checkTaskStatus(token, response['taskId'])
-
-          if result
-            UI.success("#{appPath} Uploaded to profile id #{profileID} successfully  🎉")
-          end
-        rescue => e
-          status_code = e.respond_to?(:response) && e.response ? e.response.code : 'unknown'
-          UI.user_error!("Upload failed with status code #{status_code}, with message '#{e.message}'")
-        end
       end
 
       def self.description
@@ -110,40 +156,81 @@ module Fastlane
 
       def self.details
         # Optional:
-        "Appcircle simplifies the distribution of builds to test teams with an extensive platform for managing and tracking applications, versions, testers, and teams. Appcircle integrates with enterprise authentication mechanisms such as LDAP and SSO, ensuring secure distribution of testing packages. Learn more about Appcircle testing distribution"
+        "Appcircle simplifies the distribution of builds to test teams with an extensive platform for managing and tracking applications, versions, testers, and teams. Appcircle integrates with enterprise authentication mechanisms such as LDAP and SSO, ensuring secure distribution of testing packages. Learn more about Appcircle testing distribution."
       end
 
       def self.available_options
         [
           FastlaneCore::ConfigItem.new(key: :personalAPIToken,
-                                       env_name: "AC_PERSONAL_API_TOKEN",
                                        description: "Provide Personal API Token to authenticate connections to Appcircle services",
                                        optional: false,
+                                       type: String,
+                                       verify_block: proc do |value|
+                                         UI.user_error!("Personal API Token cannot be empty. Please provide a valid access token.") unless value && !value.empty?
+                                       end),
+
+          FastlaneCore::ConfigItem.new(key: :subOrganizationName,
+                                       description: "Optional: Sub-organization name for app distribution. Profiles will be created under root organization if not provided",
+                                       optional: true,
                                        type: String),
-          
+
           FastlaneCore::ConfigItem.new(key: :profileName,
-                                       env_name: "AC_PROFILE_NAME",
-                                       description: "Enter the profile name of the Appcircle distribution profile. This name uniquely identifies the profile under which your applications will be distributed",
+                                       description: "Enter the profile name of the Appcircle testing distribution profile. This name uniquely identifies the profile under which your applications will be distributed",
                                        optional: false,
-                                       type: String),
-          
+                                       type: String,
+                                       verify_block: proc do |value|
+                                         UI.user_error!("Profile name cannot be empty. Please provide a testing distribution profile name.") unless value && !value.empty?
+                                       end),
+
           FastlaneCore::ConfigItem.new(key: :createProfileIfNotExists,
-                                       env_name: "AC_CREATE_PROFILE_IF_NOT_EXISTS",
-                                       description: "If the profile does not exist, create a new profile with the given name",
+                                       description: "Optional: If the profile does not exist, create a new profile with the given name",
                                        optional: true,
                                        type: Boolean),
 
+          FastlaneCore::ConfigItem.new(key: :profileCreationSettings,
+                                       description: "Optional: Profile creation settings for the testing distribution profile",
+                                       optional: true,
+                                       type: Hash,
+                                       verify_block: proc do |value|
+                                         # Parse and Validate
+                                         if value[:authType] && !value[:authType].empty?
+                                           UI.user_error!("Invalid authType: '#{value[:authType]}'. Options: 'none' (None), 'static' (Static Username and Password), 'ldap' (LDAP Login), 'sso' (SSO Login).") unless AUTH_TYPE_MAPPING.key?(value[:authType])
+
+                                           if value[:authType] == 'static'
+                                             UI.user_error!("username must be a String and at least 6 characters long.") unless value[:username].kind_of?(String) && value[:username].length >= 6
+                                             UI.user_error!("password must be a String and at least 6 characters long.") unless value[:password].kind_of?(String) && value[:password].length >= 6
+                                           else
+                                             value[:username] = nil
+                                             value[:password] = nil
+                                           end
+                                         end
+
+                                         if value[:testingGroupNames] && !value[:testingGroupNames].empty?
+                                           value[:testingGroupNames] = value[:testingGroupNames].to_s.split(",").map(&:strip)
+                                           UI.user_error!("testingGroupNames must be a string array. Ex: 'group1, group2, group3'.") unless value[:testingGroupNames].kind_of?(Array)
+                                         end
+                                       end),
+
           FastlaneCore::ConfigItem.new(key: :appPath,
-                                       env_name: "AC_APP_PATH",
                                        description: "Specify the path to your application file. For iOS, this can be a .ipa or .xcarchive file path. For Android, specify the .apk or .appbundle file path",
                                        optional: false,
-                                       type: String),
+                                       type: String,
+                                       verify_block: proc do |value|
+                                         UI.user_error!("Application file path cannot be empty. Please provide a valid application file path.") unless value && !value.empty?
+
+                                         file_extension = File.extname(value).downcase
+                                         unless VALID_EXTENSIONS.include?(file_extension)
+                                           UI.user_error!("Invalid file extension: '#{file_extension}'. For Android, use .apk or .aab. For iOS, use .ipa or .zip(.xcarchive).")
+                                         end
+                                       end),
 
           FastlaneCore::ConfigItem.new(key: :message,
-                                       env_name: "AC_MESSAGE",
-                                       description: "Optional message to include with the distribution to provide additional information to testers or users receiving the build",
+                                       description: "Message to include with the distribution to provide additional information to testers or users receiving the build",
                                        optional: false,
-                                       type: String)
+                                       type: String,
+                                       verify_block: proc do |value|
+                                         UI.user_error!("Message field cannot be empty. Please provide a message.") unless value && !value.empty?
+                                       end)
         ]
       end
 

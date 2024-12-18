@@ -3,10 +3,17 @@ Dotenv.load
 
 lane :test do
   appcircle_testing_distribution(
-    personalAPIToken: ENV["AC_ACCESS_TOKEN"],
-    appPath: ENV["AC_APP_PATH"],
+    personalAPIToken: ENV["AC_PERSONAL_API_TOKEN"],
+    subOrganizationName: ENV["AC_SUB_ORGANIZATION_NAME"],
     profileName: ENV["AC_PROFILE_NAME"],
-    createProfileIfNotExists: ENV["CREATE_PROFILE_IF_NOT_EXISTS"],
+    createProfileIfNotExists: ENV["AC_CREATE_PROFILE_IF_NOT_EXISTS"],
+    profileCreationSettings: {
+      authType: ENV["AC_PROFILE_AUTH_TYPE"],
+      username: ENV["AC_PROFILE_USERNAME"],
+      password: ENV["AC_PROFILE_PASSWORD"],
+      testingGroupNames: ENV["AC_PROFILE_TESTING_GROUP_NAMES"]
+    },
+    appPath: ENV["AC_APP_PATH"],
     message: ENV["AC_MESSAGE"],
   )
 end
