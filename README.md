@@ -102,7 +102,7 @@ For more information please refer to the documentation.
   - [System Requirements](https://docs.appcircle.io/marketplace/fastlane/testing-distribution#system-requirements)
   - [User Permission Requirements](https://docs.appcircle.io/marketplace/fastlane/testing-distribution#user-permission-requirements)
   - [How to Add the Appcircle Distribute Action to Your Pipeline](https://docs.appcircle.io/marketplace/fastlane/testing-distribution#how-to-add-the-appcircle-distribute-action-to-your-pipeline)
-  <!-- TODO: - [CLI Usage](https://docs.appcircle.io/marketplace/fastlane/testing-distribution#cli-usage) -->
+  - [CLI Usage](https://docs.appcircle.io/marketplace/fastlane/testing-distribution#cli-usage)
   - [Distributing to Sub-Organizations](https://docs.appcircle.io/marketplace/fastlane/testing-distribution#distributing-to-sub-organizations)
   - [Leveraging Environment Variables](https://docs.appcircle.io/marketplace/fastlane/testing-distribution#leveraging-environment-variables)
 - [References](https://docs.appcircle.io/marketplace/fastlane/testing-distribution#references)
