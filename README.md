@@ -1,4 +1,4 @@
-## Appcircle Testing Distribution
+# Appcircle Testing Distribution
 
 [![fastlane Plugin Badge](https://rawcdn.githack.com/fastlane/fastlane/master/fastlane/assets/plugin-badge.svg)](https://rubygems.org/gems/fastlane-plugin-appcircle_testing_distribution)
 
@@ -86,23 +86,24 @@ fastlane add_plugin appcircle_testing_distribution
 - `profileName`: Specifies the profile that will be used for uploading the app.
 - `createProfileIfNotExists` (optional): Ensures that a testing distribution profile is automatically created if it does not already exist; if the profile name already exists, the app will be uploaded to that existing profile instead.
 - `profileCreationSettings` (optional): If `createProfileIfNotExists` is `true` and a new profile being created, the profile will be configured with these settings.
-   - `authType`: Authentication type of the profile. `none`: None, `static`: Static Username and Password, `ldap`: LDAP Login, `sso`: SSO Login.
-   - `username`: The username for the profile if authentication type set to `static` (Static Username and Password).
-   - `password`: The password for the profile if authentication type set to `static` (Static Username and Password).
-   - `testingGroupNames`: Uploaded versions will be automatically shared with these testing groups. Example format: `group1, group2, group3`.
+  - `authType`: Authentication type of the profile. `none`: None, `static`: Static Username and Password, `ldap`: LDAP Login, `sso`: SSO Login.
+  - `username`: The username for the profile if authentication type set to `static` (Static Username and Password).
+  - `password`: The password for the profile if authentication type set to `static` (Static Username and Password).
+  - `testingGroupNames`: Uploaded versions will be automatically shared with these testing groups. Example format: `group1, group2, group3`.
 - `appPath`: Indicates the file path to the application package that will be uploaded to Appcircle Testing Distribution Profile.
 - `message`: Your message to testers, ensuring they receive important updates and information regarding the application.
 
 ## Further Details
+
 For more information please refer to the documentation.
 
 - [Setting Up Appcircle Testing Distribution Plugin](https://docs.appcircle.io/marketplace/fastlane/testing-distribution)
-   - [Discover Action](https://docs.appcircle.io/marketplace/fastlane/testing-distribution#discover-action)
-   - [System Requirements](https://docs.appcircle.io/marketplace/fastlane/testing-distribution#system-requirements)
-   - [User Permission Requirements](https://docs.appcircle.io/marketplace/fastlane/testing-distribution#user-permission-requirements)
-   - [How to Add the Appcircle Distribute Action to Your Pipeline](https://docs.appcircle.io/marketplace/fastlane/testing-distribution#how-to-add-the-appcircle-distribute-action-to-your-pipeline)
-   - [Distributing to Sub-Organizations](https://docs.appcircle.io/marketplace/fastlane/testing-distribution#distributing-to-sub-organizations)
-   - [Leveraging Environment Variables](https://docs.appcircle.io/marketplace/fastlane/testing-distribution#leveraging-environment-variables)
+  - [Discover Action](https://docs.appcircle.io/marketplace/fastlane/testing-distribution#discover-action)
+  - [System Requirements](https://docs.appcircle.io/marketplace/fastlane/testing-distribution#system-requirements)
+  - [User Permission Requirements](https://docs.appcircle.io/marketplace/fastlane/testing-distribution#user-permission-requirements)
+  - [How to Add the Appcircle Distribute Action to Your Pipeline](https://docs.appcircle.io/marketplace/fastlane/testing-distribution#how-to-add-the-appcircle-distribute-action-to-your-pipeline)
+  - [Distributing to Sub-Organizations](https://docs.appcircle.io/marketplace/fastlane/testing-distribution#distributing-to-sub-organizations)
+  - [Leveraging Environment Variables](https://docs.appcircle.io/marketplace/fastlane/testing-distribution#leveraging-environment-variables)
 - [References](https://docs.appcircle.io/marketplace/fastlane/testing-distribution#references)
 
 ## Issues and Feedback
