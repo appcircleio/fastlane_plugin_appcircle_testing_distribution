@@ -2,7 +2,6 @@ require 'net/http'
 require 'uri'
 require 'json'
 require 'rest-client'
-require_relative '../helper/appcircle_testing_distribution_helper'
 
 BASE_URL = "https://api.appcircle.io"
 

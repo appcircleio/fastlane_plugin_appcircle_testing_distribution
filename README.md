@@ -64,7 +64,7 @@ This project is a [_fastlane_](https://github.com/fastlane/fastlane) plugin. To 
 fastlane add_plugin appcircle_testing_distribution
 ```
 
-```yml
+```ruby
   appcircle_testing_distribution(
     personalAPIToken: ENV["AC_ACCESS_TOKEN"],
     subOrganizationName: ENV["AC_SUB_ORGANIZATION_NAME"],
