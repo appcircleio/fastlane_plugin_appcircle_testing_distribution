@@ -66,7 +66,7 @@ fastlane add_plugin appcircle_testing_distribution
 
 ```ruby
   appcircle_testing_distribution(
-    personalAPIToken: ENV["AC_ACCESS_TOKEN"],
+    personalAPIToken: ENV["AC_PERSONAL_API_TOKEN"],
     subOrganizationName: ENV["AC_SUB_ORGANIZATION_NAME"],
     profileName: ENV["AC_PROFILE_NAME"],
     createProfileIfNotExists: ENV["AC_CREATE_PROFILE_IF_NOT_EXISTS"],
