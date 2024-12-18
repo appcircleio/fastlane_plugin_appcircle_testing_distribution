@@ -9,12 +9,12 @@ module TDUploadService
   def self.upload_artifact(token:, message:, app:, dist_profile_id:)
     url = "https://api.appcircle.io/distribution/v2/profiles/#{dist_profile_id}/app-versions"
     headers = {
-      Authorization: "Bearer #{token}",
-      # content_type: :multipart or multipart/form-data # Causing a type cast warning
+      Authorization: "Bearer #{token}"
     }
     payload = {
       Message: message,
-      File: File.new(app, 'rb')
+      File: File.new(app, 'rb'),
+      multipart: true # Force multipart encoding for RestClient
     }
   
     begin
