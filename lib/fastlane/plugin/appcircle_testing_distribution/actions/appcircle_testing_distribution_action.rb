@@ -162,7 +162,6 @@ module Fastlane
       def self.available_options
         [
           FastlaneCore::ConfigItem.new(key: :personalAPIToken,
-                                       env_name: "AC_PERSONAL_API_TOKEN",
                                        description: "Provide Personal API Token to authenticate connections to Appcircle services",
                                        optional: false,
                                        type: String,
@@ -171,41 +170,32 @@ module Fastlane
                                        end),
 
           FastlaneCore::ConfigItem.new(key: :subOrganizationName,
-                                       env_name: "AC_SUB_ORGANIZATION_NAME",
                                        description: "Optional: Sub-organization name for app distribution. Profiles will be created under root organization if not provided",
                                        optional: true,
                                        type: String),
-          
+
           FastlaneCore::ConfigItem.new(key: :profileName,
-                                       env_name: "AC_PROFILE_NAME",
                                        description: "Enter the profile name of the Appcircle testing distribution profile. This name uniquely identifies the profile under which your applications will be distributed",
                                        optional: false,
                                        type: String,
                                        verify_block: proc do |value|
                                          UI.user_error!("Profile name cannot be empty. Please provide a testing distribution profile name.") unless value && !value.empty?
                                        end),
-          
+
           FastlaneCore::ConfigItem.new(key: :createProfileIfNotExists,
-                                       env_name: "AC_CREATE_PROFILE_IF_NOT_EXISTS",
                                        description: "Optional: If the profile does not exist, create a new profile with the given name",
                                        optional: true,
                                        type: Boolean),
-          
+
           FastlaneCore::ConfigItem.new(key: :profileCreationSettings,
                                        description: "Optional: Profile creation settings for the testing distribution profile",
                                        optional: true,
                                        type: Hash,
                                        verify_block: proc do |value|
-                                         # Get values
-                                         value[:authType] ||= ENV["AC_PROFILE_AUTH_TYPE"]
-                                         value[:username] ||= ENV["AC_PROFILE_USERNAME"]
-                                         value[:password] ||= ENV["AC_PROFILE_PASSWORD"]
-                                         value[:testingGroupNames] ||= ENV["AC_PROFILE_TESTING_GROUP_NAMES"]
-
                                          # Parse and Validate
                                          if value[:authType] && !value[:authType].empty?
                                            UI.user_error!("Invalid authType: '#{value[:authType]}'. Options: 'none' (None), 'static' (Static Username and Password), 'ldap' (LDAP Login), 'sso' (SSO Login).") unless AUTH_TYPE_MAPPING.key?(value[:authType])
-                                           
+
                                            if value[:authType] == 'static'
                                              UI.user_error!("username must be a String and at least 6 characters long.") unless value[:username].kind_of?(String) && value[:username].length >= 6
                                              UI.user_error!("password must be a String and at least 6 characters long.") unless value[:password].kind_of?(String) && value[:password].length >= 6
@@ -222,7 +212,6 @@ module Fastlane
                                        end),
 
           FastlaneCore::ConfigItem.new(key: :appPath,
-                                       env_name: "AC_APP_PATH",
                                        description: "Specify the path to your application file. For iOS, this can be a .ipa or .xcarchive file path. For Android, specify the .apk or .appbundle file path",
                                        optional: false,
                                        type: String,
@@ -236,7 +225,6 @@ module Fastlane
                                        end),
 
           FastlaneCore::ConfigItem.new(key: :message,
-                                       env_name: "AC_MESSAGE",
                                        description: "Message to include with the distribution to provide additional information to testers or users receiving the build",
                                        optional: false,
                                        type: String,
