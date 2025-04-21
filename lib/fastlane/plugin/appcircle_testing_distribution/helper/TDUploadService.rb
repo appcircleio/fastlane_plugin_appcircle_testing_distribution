@@ -58,7 +58,6 @@ module TDUploadService
       commit_response = RestClient.post(uri.to_s, commit_payload, commit_headers)
       result = JSON.parse(commit_response.body)
       UI.success("Upload completed successfully.")
-      UI.success("This is a development build.")
       return result
     rescue RestClient::ExceptionWithResponse => e
       raise e
