@@ -6,20 +6,60 @@ require 'rest-client'
 BASE_URL = "https://api.appcircle.io"
 
 module TDUploadService
+  UI = FastlaneCore::UI
   def self.upload_artifact(token:, message:, app:, dist_profile_id:)
-    url = "https://api.appcircle.io/distribution/v2/profiles/#{dist_profile_id}/app-versions"
+    file_path = app
+    file_name = File.basename(file_path)
+    file_size = File.size(file_path)
+
+    upload_info_url = "#{BASE_URL}/distribution/v1/profiles/#{dist_profile_id}/app-versions"
     headers = {
       Authorization: "Bearer #{token}",
-      content_type: :multipart # multipart/form-data
+      accept: 'application/json'
     }
-    payload = {
-      Message: message,
-      File: File.new(app, 'rb')
-    }
-  
+
+    uri = URI(upload_info_url)
+    uri.query = URI.encode_www_form({
+      action: 'uploadInformation',
+      fileName: file_name,
+      fileSize: file_size
+    })
+
     begin
-      response = RestClient.post(url, payload, headers)
-      JSON.parse(response.body) rescue response.body
+      response = RestClient.get(uri.to_s, headers)
+      upload_info = JSON.parse(response.body)
+      file_id = upload_info['fileId']
+      upload_url = upload_info['uploadUrl']
+
+      file_content = File.binread(file_path)
+      RestClient.put(
+        upload_url,
+        file_content,
+        { content_type: 'application/octet-stream' }
+      )
+
+      # Step 3: Commit the file upload
+      commit_url = "#{BASE_URL}/distribution/v1/profiles/#{dist_profile_id}/app-versions"
+      uri = URI(commit_url)
+      uri.query = URI.encode_www_form({ action: 'commitFileUpload' })
+      
+      commit_payload = {
+        fileId: file_id,
+        fileName: file_name,
+        message: message
+      }.to_json
+
+      commit_headers = {
+        Authorization: "Bearer #{token}",
+        content_type: :json,
+        accept: 'application/json'
+      }
+
+      commit_response = RestClient.post(uri.to_s, commit_payload, commit_headers)
+      result = JSON.parse(commit_response.body)
+      UI.success("Upload completed successfully.")
+      UI.success("This is a development build.")
+      return result
     rescue RestClient::ExceptionWithResponse => e
       raise e
     rescue StandardError => e
