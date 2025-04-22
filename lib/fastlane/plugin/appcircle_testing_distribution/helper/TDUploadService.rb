@@ -26,19 +26,33 @@ module TDUploadService
     })
 
     begin
+      UI.message("Getting file upload information...")
       response = RestClient.get(uri.to_s, headers)
       upload_info = JSON.parse(response.body)
+      if response.code.between?(200, 299)
+        UI.success("File upload information retrieved successfully with status code: #{response.code}")
+      else
+        UI.error("Failed to retrieve file upload information with status code: #{response.code}")
+        raise "Failed to retrieve file upload information."
+      end        
       file_id = upload_info['fileId']
       upload_url = upload_info['uploadUrl']
 
       file_content = File.binread(file_path)
-      RestClient.put(
+      UI.message("Uploading file to Appcircle...")
+      response = RestClient.put(
         upload_url,
         file_content,
         { content_type: 'application/octet-stream' }
       )
+      # UI.success("File uploaded successfully.")
+      if response.code.between?(200, 299)
+        UI.success("File upload finished successfully with status code: #{response.code}")
+      else
+        UI.error("File upload failed with status code: #{response.code}")
+        raise "File upload failed."
+      end
 
-      # Step 3: Commit the file upload
       commit_url = "#{BASE_URL}/distribution/v1/profiles/#{dist_profile_id}/app-versions"
       uri = URI(commit_url)
       uri.query = URI.encode_www_form({ action: 'commitFileUpload' })
@@ -55,9 +69,17 @@ module TDUploadService
         accept: 'application/json'
       }
 
+      UI.message("Committing file upload...")
       commit_response = RestClient.post(uri.to_s, commit_payload, commit_headers)
       result = JSON.parse(commit_response.body)
-      UI.success("Upload completed successfully.")
+      if commit_response.code.between?(200, 299)
+        result = JSON.parse(commit_response.body)
+        UI.success("Commit successful with status code: #{commit_response.code}")
+      else
+        UI.error("Commit failed with status code: #{commit_response.code}")
+        raise "Commit failed with status code: #{commit_response.code}"
+      end
+
       return result
     rescue RestClient::ExceptionWithResponse => e
       raise e
