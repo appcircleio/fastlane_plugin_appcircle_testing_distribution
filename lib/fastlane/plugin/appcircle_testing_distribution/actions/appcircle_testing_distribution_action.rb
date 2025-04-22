@@ -44,7 +44,7 @@ module Fastlane
       def self.ac_login(personalAPIToken)
         begin
           user = TDAuthService.get_ac_token(pat: personalAPIToken)
-          UI.success("Login is successful.")
+          UI.success("Logged into Appcircle successfully.")
           return user.accessToken
         rescue => e
           UI.user_error!("Login failed: #{e.message}")
