@@ -1,5 +1,5 @@
 module Fastlane
   module AppcircleTestingDistribution
-    VERSION = "0.2.3"
+    VERSION = "0.4.1"
   end
 end
