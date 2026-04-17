@@ -13,7 +13,7 @@ Testing distribution is the process of distributing test builds to designated te
 ## Benefits of Using Testing Distribution
 
 1. **Simplified Binary Distribution**.
-   - **Skip Traditional Stores:** Share .xcarchive .IPA, APK, AAB, Zip, files directly, avoiding the need to use App Store TestFlight or Google Play Internal Testing.
+   - **Skip Traditional Stores:** Share IPA, APK, AAB files directly, avoiding the need to use App Store TestFlight or Google Play Internal Testing.
 2. **Streamlined Workflow:**
    - **Automated Processes:** Platforms like Appcircle automate the distribution process, saving time and reducing manual effort.
    - **Seamless Integration:** Integrates smoothly with existing DevOps pipelines, enabling efficient build and distribution workflows.
@@ -67,9 +67,10 @@ fastlane add_plugin appcircle_testing_distribution
 ```ruby
   appcircle_testing_distribution(
     personalAPIToken: ENV["AC_PERSONAL_API_TOKEN"],
+    personalAccessKey: ENV["AC_PERSONAL_ACCESS_KEY"],
     subOrganizationName: ENV["AC_SUB_ORGANIZATION_NAME"],
     profileName: ENV["AC_PROFILE_NAME"],
-    createProfileIfNotExists: ENV["AC_CREATE_PROFILE_IF_NOT_EXISTS"],
+    createProfileIfNotExists: ENV["AC_CREATE_PROFILE_IF_NOT_EXISTS"] == "true",
     profileCreationSettings: {
       authType: ENV["AC_PROFILE_AUTH_TYPE"],
       username: ENV["AC_PROFILE_USERNAME"],
@@ -81,7 +82,17 @@ fastlane add_plugin appcircle_testing_distribution
   )
 ```
 
+### Authentication
+
+Provide **either** `personalAPIToken` **or** `personalAccessKey` — not both. If neither is provided, or both are provided at the same time, the plugin fails fast with a descriptive error.
+
 - `personalAPIToken`: The Appcircle Personal API token used to authenticate and authorize access to Appcircle services within this plugin.
+- `personalAccessKey`: Alternative authentication method using a Personal Access Key. Use this if your organization provisions access keys instead of API tokens.
+
+> **Note:** `subOrganizationName` is currently supported only when authenticating with `personalAPIToken`. When used together with `personalAccessKey`, the sub-organization switch is skipped with a warning.
+
+### Other parameters
+
 - `subOrganizationName` (optional): Required when the Root Organization's `personalAPIToken` is used, and you want to create the profile under a sub-organization. In this case, provide the name of the sub-organization in this field. If you directly used the sub-organization's `personalAPIToken`, this parameter is not needed.
 - `profileName`: Specifies the profile that will be used for uploading the app.
 - `createProfileIfNotExists` (optional): Ensures that a testing distribution profile is automatically created if it does not already exist; if the profile name already exists, the app will be uploaded to that existing profile instead.
