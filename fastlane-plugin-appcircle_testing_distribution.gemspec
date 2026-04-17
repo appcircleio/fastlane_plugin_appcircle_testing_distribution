@@ -14,12 +14,12 @@ Gem::Specification.new do |spec|
 
   spec.files         = Dir["lib/**/*"] + Dir["images/*.png"] + %w(README.md LICENSE)
   spec.require_paths = ['lib']
-  spec.metadata['rubygems_mfa_required'] = 'false'
+  spec.metadata['rubygems_mfa_required'] = 'true'
   spec.required_ruby_version = '>= 2.6'
 
   # Don't add a dependency to fastlane or fastlane_re
   # since this would cause a circular dependency
 
   # spec.add_dependency 'your-dependency', '~> 1.0.0'
-  spec.add_dependency "rest-client"
+  spec.add_dependency("rest-client")
 end

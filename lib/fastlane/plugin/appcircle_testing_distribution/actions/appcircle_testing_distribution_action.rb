@@ -12,6 +12,7 @@ module Fastlane
     class AppcircleTestingDistributionAction < Action
       def self.run(params)
         personalAPIToken = params[:personalAPIToken]
+        personalAccessKey = params[:personalAccessKey]
         profileName = params[:profileName]
         appPath = params[:appPath]
         message = params[:message]
@@ -24,8 +25,10 @@ module Fastlane
           UI.user_error!("Invalid file extension: #{file_extension}. For Android, use .apk or .aab. For iOS, use .ipa or .zip(.xcarchive).")
         end
 
-        if personalAPIToken.nil?
-          UI.user_error!("Personal API Token is required to authenticate connections to Appcircle services. Please provide a valid access token")
+        if personalAPIToken.nil? && personalAccessKey.nil?
+          UI.user_error!("Either Personal API Token or Personal Access Key is required to authenticate connections to Appcircle services. Please provide a valid access token or access key")
+        elsif !personalAPIToken.nil? && !personalAccessKey.nil?
+          UI.user_error!("Personal API Token and Personal Access Key cannot be used together. Please provide only one authentication method")
         elsif profileName.nil?
           UI.user_error!("Distribution profile name is required to distribute applications. Please provide a distribution profile name")
         elsif appPath.nil?
@@ -35,15 +38,19 @@ module Fastlane
         end
 
 
-        authToken = self.ac_login(personalAPIToken)
+        authToken = self.ac_login(personalAPIToken, personalAccessKey)
 
         profileId = TDUploadService.get_profile_id(authToken, profileName, createProfileIfNotExists)
         self.ac_upload(authToken, appPath, profileId, message)
       end
 
-      def self.ac_login(personalAPIToken)
+      def self.ac_login(personalAPIToken, personalAccessKey)
         begin
-          user = TDAuthService.get_ac_token(pat: personalAPIToken)
+          if personalAccessKey
+            user = TDAuthService.get_ac_token_with_personal_access_key(personal_access_key: personalAccessKey)
+          else
+            user = TDAuthService.get_ac_token(pat: personalAPIToken)
+          end
           UI.success("Login is successful.")
           return user.accessToken
         rescue => e
@@ -117,8 +124,14 @@ module Fastlane
         [
           FastlaneCore::ConfigItem.new(key: :personalAPIToken,
                                        env_name: "AC_PERSONAL_API_TOKEN",
-                                       description: "Provide Personal API Token to authenticate connections to Appcircle services",
-                                       optional: false,
+                                       description: "Provide Personal API Token to authenticate connections to Appcircle services (alternative to personalAccessKey)",
+                                       optional: true,
+                                       type: String),
+          
+          FastlaneCore::ConfigItem.new(key: :personalAccessKey,
+                                       env_name: "AC_PERSONAL_ACCESS_KEY",
+                                       description: "Provide Personal Access Key to authenticate connections to Appcircle services (alternative to personalAPIToken)",
+                                       optional: true,
                                        type: String),
           
           FastlaneCore::ConfigItem.new(key: :profileName,
