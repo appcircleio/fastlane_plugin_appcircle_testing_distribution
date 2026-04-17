@@ -10,7 +10,7 @@ require_relative '../helper/TDUploadService'
 module Fastlane
   module Actions
     class AppcircleTestingDistributionAction < Action
-      VALID_EXTENSIONS = ['.apk', '.aab', '.ipa', '.zip']
+      VALID_EXTENSIONS = ['.apk', '.aab', '.ipa']
       AUTH_TYPE_MAPPING = {
         'none' => 1, # None
         'static' => 3, # Static Username and Password
@@ -20,6 +20,7 @@ module Fastlane
       
       def self.run(params)
         personalAPIToken = params[:personalAPIToken]
+        personalAccessKey = params[:personalAccessKey]
         subOrganizationName = params[:subOrganizationName]
         profileName = params[:profileName]
         createProfileIfNotExists = params[:createProfileIfNotExists] || false
@@ -32,11 +33,20 @@ module Fastlane
         #
         appPath = params[:appPath]
         message = params[:message]
-        
+
         profileAuthType = AUTH_TYPE_MAPPING[profileAuthType] # map input to API values
 
+        # Validate auth input (either-or, not both, not none)
+        if personalAPIToken.nil? && personalAccessKey.nil?
+          UI.user_error!("Either Personal API Token or Personal Access Key is required to authenticate connections to Appcircle services. Please provide a valid access token or access key.")
+        elsif !personalAPIToken.nil? && !personalAccessKey.nil?
+          UI.user_error!("Personal API Token and Personal Access Key cannot be used together. Please provide only one authentication method.")
+        end
+
         # Auth
-        authToken = self.ac_login(personalAPIToken, subOrganizationName)
+        authToken = self.ac_login(personal_api_token: personalAPIToken,
+                                  personal_access_key: personalAccessKey,
+                                  sub_organization_name: subOrganizationName)
 
         # Get or create profile
         profileId = self.ac_get_or_create_profile(authToken, profileName, createProfileIfNotExists, profileCreationSettings, profileAuthType, profileUsername, profilePassword, profileTestingGroupNames)
@@ -45,21 +55,29 @@ module Fastlane
         self.ac_upload(authToken, appPath, profileId, profileName, message)
       end
 
-      def self.ac_login(personalAPIToken, subOrganizationName)
+      def self.ac_login(personal_api_token:, personal_access_key:, sub_organization_name:)
         begin
           token = ''
 
-          user = TDAuthService.get_ac_token(pat: personalAPIToken)
+          if personal_access_key
+            user = TDAuthService.get_ac_token_with_personal_access_key(personal_access_key: personal_access_key)
+          else
+            user = TDAuthService.get_ac_token(pat: personal_api_token)
+          end
           UI.success("Login is successful.")
           token = user.accessToken
-          
-          if subOrganizationName
-            organization_id = TDAuthService.get_organization_id(access_token: token, name: subOrganizationName)
-            user = TDAuthService.get_ac_token(pat: personalAPIToken, sub_organization_id: organization_id)
-            UI.message("Switched to sub-organization: #{subOrganizationName}")
-            token = user.accessToken
+
+          if sub_organization_name
+            if personal_access_key
+              UI.important("Warning: subOrganizationName is currently only supported with personalAPIToken auth. Ignoring sub-organization switch for Personal Access Key login.")
+            else
+              organization_id = TDAuthService.get_organization_id(access_token: token, name: sub_organization_name)
+              user = TDAuthService.get_ac_token(pat: personal_api_token, sub_organization_id: organization_id)
+              UI.message("Switched to sub-organization: #{sub_organization_name}")
+              token = user.accessToken
+            end
           end
-          
+
           return token
 
         rescue => e
@@ -162,19 +180,25 @@ module Fastlane
       def self.available_options
         [
           FastlaneCore::ConfigItem.new(key: :personalAPIToken,
-                                       description: "Provide Personal API Token to authenticate connections to Appcircle services",
-                                       optional: false,
-                                       type: String,
-                                       verify_block: proc do |value|
-                                         UI.user_error!("Personal API Token cannot be empty. Please provide a valid access token.") unless value && !value.empty?
-                                       end),
+                                       env_name: "AC_PERSONAL_API_TOKEN",
+                                       description: "Provide Personal API Token to authenticate connections to Appcircle services (alternative to personalAccessKey)",
+                                       optional: true,
+                                       type: String),
+
+          FastlaneCore::ConfigItem.new(key: :personalAccessKey,
+                                       env_name: "AC_PERSONAL_ACCESS_KEY",
+                                       description: "Provide Personal Access Key to authenticate connections to Appcircle services (alternative to personalAPIToken)",
+                                       optional: true,
+                                       type: String),
 
           FastlaneCore::ConfigItem.new(key: :subOrganizationName,
+                                       env_name: "AC_SUB_ORGANIZATION_NAME",
                                        description: "Optional: Sub-organization name for app distribution. Profiles will be created under root organization if not provided",
                                        optional: true,
                                        type: String),
 
           FastlaneCore::ConfigItem.new(key: :profileName,
+                                       env_name: "AC_PROFILE_NAME",
                                        description: "Enter the profile name of the Appcircle testing distribution profile. This name uniquely identifies the profile under which your applications will be distributed",
                                        optional: false,
                                        type: String,
@@ -183,6 +207,7 @@ module Fastlane
                                        end),
 
           FastlaneCore::ConfigItem.new(key: :createProfileIfNotExists,
+                                       env_name: "AC_CREATE_PROFILE_IF_NOT_EXISTS",
                                        description: "Optional: If the profile does not exist, create a new profile with the given name",
                                        optional: true,
                                        type: Boolean),
@@ -212,7 +237,8 @@ module Fastlane
                                        end),
 
           FastlaneCore::ConfigItem.new(key: :appPath,
-                                       description: "Specify the path to your application file. For iOS, this can be a .ipa or .xcarchive file path. For Android, specify the .apk or .appbundle file path",
+                                       env_name: "AC_APP_PATH",
+                                       description: "Specify the path to your application file. For iOS, this can be a .ipa file path. For Android, specify the .apk or .aab file path",
                                        optional: false,
                                        type: String,
                                        verify_block: proc do |value|
@@ -220,11 +246,12 @@ module Fastlane
 
                                          file_extension = File.extname(value).downcase
                                          unless VALID_EXTENSIONS.include?(file_extension)
-                                           UI.user_error!("Invalid file extension: '#{file_extension}'. For Android, use .apk or .aab. For iOS, use .ipa or .zip(.xcarchive).")
+                                           UI.user_error!("Invalid file extension: '#{file_extension}'. For Android, use .apk or .aab. For iOS, use .ipa.")
                                          end
                                        end),
 
           FastlaneCore::ConfigItem.new(key: :message,
+                                       env_name: "AC_MESSAGE",
                                        description: "Message to include with the distribution to provide additional information to testers or users receiving the build",
                                        optional: false,
                                        type: String,
