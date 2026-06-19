@@ -1,4 +1,4 @@
-## Appcircle Testing Distribution
+# Appcircle Testing Distribution
 
 [![fastlane Plugin Badge](https://rawcdn.githack.com/fastlane/fastlane/master/fastlane/assets/plugin-badge.svg)](https://rubygems.org/gems/fastlane-plugin-appcircle_testing_distribution)
 
@@ -13,7 +13,7 @@ Testing distribution is the process of distributing test builds to designated te
 ## Benefits of Using Testing Distribution
 
 1. **Simplified Binary Distribution**.
-   - **Skip Traditional Stores:** Share .xcarchive .IPA, APK, AAB, Zip, files directly, avoiding the need to use App Store TestFlight or Google Play Internal Testing.
+   - **Skip Traditional Stores:** Share IPA, APK, AAB files directly, avoiding the need to use App Store TestFlight or Google Play Internal Testing.
 2. **Streamlined Workflow:**
    - **Automated Processes:** Platforms like Appcircle automate the distribution process, saving time and reducing manual effort.
    - **Seamless Integration:** Integrates smoothly with existing DevOps pipelines, enabling efficient build and distribution workflows.
@@ -38,24 +38,11 @@ Testing distribution is the process of distributing test builds to designated te
 
 Overall, using testing distribution in mobile DevOps significantly enhances the efficiency, security, and effectiveness of the software development process, leading to better products and faster delivery times.
 
-## System Requirements
+<!-- ## Testing Distribution
 
-**Compatible Agents:**
+In order to share your builds with testers, you can create testing distribution profiles and assign testing groups to the profiles.
 
-- macOS 14.2, 14.5
-
-**Supported Version:**
-
-- Fastlane 2.222.0
-- Ruby 3.2.2
-
-Note: Currently, plugins are only compatible to use with **Appcircle Cloud**. **Self-hosted** support will be available in future releases.
-
-## Testing Distribution
-
-In order to share your builds with testers, you can create distribution profiles and assign testing groups to the distribution profiles.
-
-![Distribution Profile](<https://cdn.appcircle.io/docs/assets/image%20(152).png>)
+![Testing Distribution Profile](<https://cdn.appcircle.io/docs/assets/image%20(152).png>)
 
 ## Generating/Managing the Personal API Tokens
 
@@ -65,11 +52,11 @@ To generate a Personal API Token, follow these steps:
 2. You'll find the Personal API Token section in the top right corner.
 3. Press the "Generate Token" button to generate your first token.
 
-![Token Generation](<https://cdn.appcircle.io/docs/assets/image%20(164).png>)
+![Token Generation](<https://cdn.appcircle.io/docs/assets/image%20(164).png>) -->
 
 ## Getting Started with the Extension: Usage Guide
 
-To share your builds with testers, you can create distribution profiles and assign testing groups to these profiles.
+To share your builds with testers, you can create testing distribution profiles and assign testing groups to these profiles.
 
 This project is a [_fastlane_](https://github.com/fastlane/fastlane) plugin. To get started with `fastlane-plugin-appcircle_testing_distribution`, add it to your project by running:
 
@@ -77,31 +64,59 @@ This project is a [_fastlane_](https://github.com/fastlane/fastlane) plugin. To 
 fastlane add_plugin appcircle_testing_distribution
 ```
 
-```yml
+```ruby
   appcircle_testing_distribution(
-    personalAPIToken: "$(AC_PERSONAL_API_TOKEN)",
-    profileName: "$(AC_PROFILE_NAME)",
-    createProfileIfNotExists: Boolean,
-    appPath: "$(AC_APP_PATH)",
-    message: "$(AC_MESSAGE)",
+    personalAPIToken: ENV["AC_PERSONAL_API_TOKEN"],
+    personalAccessKey: ENV["AC_PERSONAL_ACCESS_KEY"],
+    subOrganizationName: ENV["AC_SUB_ORGANIZATION_NAME"],
+    profileName: ENV["AC_PROFILE_NAME"],
+    createProfileIfNotExists: ENV["AC_CREATE_PROFILE_IF_NOT_EXISTS"] == "true",
+    profileCreationSettings: {
+      authType: ENV["AC_PROFILE_AUTH_TYPE"],
+      username: ENV["AC_PROFILE_USERNAME"],
+      password: ENV["AC_PROFILE_PASSWORD"],
+      testingGroupNames: ENV["AC_PROFILE_TESTING_GROUP_NAMES"]
+    },
+    appPath: ENV["AC_APP_PATH"],
+    message: ENV["AC_MESSAGE"]
   )
 ```
 
-- `personalAPIToken`: The Appcircle Personal API token is utilized to authenticate and secure access to Appcircle services, ensuring that only authorized users can perform actions within the platform.
+### Authentication
+
+Provide **either** `personalAPIToken` **or** `personalAccessKey` — not both. If neither is provided, or both are provided at the same time, the plugin fails fast with a descriptive error.
+
+- `personalAPIToken`: The Appcircle Personal API token used to authenticate and authorize access to Appcircle services within this plugin.
+- `personalAccessKey`: Alternative authentication method using a Personal Access Key. Use this if your organization provisions access keys instead of API tokens.
+
+> **Note:** `subOrganizationName` is currently supported only when authenticating with `personalAPIToken`. When used together with `personalAccessKey`, the sub-organization switch is skipped with a warning.
+
+### Other parameters
+
+- `subOrganizationName` (optional): Required when the Root Organization's `personalAPIToken` is used, and you want to create the profile under a sub-organization. In this case, provide the name of the sub-organization in this field. If you directly used the sub-organization's `personalAPIToken`, this parameter is not needed.
 - `profileName`: Specifies the profile that will be used for uploading the app.
-- `createProfileIfNotExists`: Ensures that a user profile is automatically created if it does not already exist; if the profile name already exists, the app will be uploaded to that existing profile instead.
-- `appPath`: Indicates the file path to the application that will be uploaded to Appcircle Testing Distribution Profile.
+- `createProfileIfNotExists` (optional): Ensures that a testing distribution profile is automatically created if it does not already exist; if the profile name already exists, the app will be uploaded to that existing profile instead.
+- `profileCreationSettings` (optional): If `createProfileIfNotExists` is `true` and a new profile being created, the profile will be configured with these settings.
+  - `authType`: Authentication type of the profile. `none`: None, `static`: Static Username and Password, `ldap`: LDAP Login, `sso`: SSO Login.
+  - `username`: The username for the profile if authentication type set to `static` (Static Username and Password).
+  - `password`: The password for the profile if authentication type set to `static` (Static Username and Password).
+  - `testingGroupNames`: Uploaded versions will be automatically shared with these testing groups. Example format: `group1, group2, group3`.
+- `appPath`: Indicates the file path to the application package that will be uploaded to Appcircle Testing Distribution Profile.
 - `message`: Your message to testers, ensuring they receive important updates and information regarding the application.
 
-### Leveraging Environment Variables
+## Further Details
 
-Utilize environment variables seamlessly by substituting the parameters with `$(VARIABLE_NAME)` in your task inputs. The extension automatically retrieves values from the specified environment variables within your pipeline.
+For more information please refer to the documentation.
 
-**Ensure that this action is added after build steps have been completed.**
-
-**If multiple workflows start simultaneously, the order in which versions are shared in the Testing Distribution is determined by the execution order of the publish step. The version that completes its build and triggers the publish plugin first will be shared first, followed by the others in sequence.**
-
-Efficiently distribute test binaries or beta versions using Appcircle, featuring seamless IPA and APK distribution capabilities. Streamline your testing process with our versatile tool designed to optimize your distribution workflow. If you need support or more information, please [contact us](https://appcircle.io/contact?utm_source=fastlane&utm_medium=plugin&utm_campaign=testing_distribution)
+- [Setting Up Appcircle Testing Distribution Plugin](https://docs.appcircle.io/marketplace/fastlane/testing-distribution)
+  - [Discover Action](https://docs.appcircle.io/marketplace/fastlane/testing-distribution#discover-action)
+  - [System Requirements](https://docs.appcircle.io/marketplace/fastlane/testing-distribution#system-requirements)
+  - [User Permission Requirements](https://docs.appcircle.io/marketplace/fastlane/testing-distribution#user-permission-requirements)
+  - [How to Add the Appcircle Distribute Action to Your Pipeline](https://docs.appcircle.io/marketplace/fastlane/testing-distribution#how-to-add-the-appcircle-distribute-action-to-your-pipeline)
+  - [CLI Usage](https://docs.appcircle.io/marketplace/fastlane/testing-distribution#cli-usage)
+  - [Distributing to Sub-Organizations](https://docs.appcircle.io/marketplace/fastlane/testing-distribution#distributing-to-sub-organizations)
+  - [Leveraging Environment Variables](https://docs.appcircle.io/marketplace/fastlane/testing-distribution#leveraging-environment-variables)
+- [References](https://docs.appcircle.io/marketplace/fastlane/testing-distribution#references)
 
 ## Issues and Feedback
 
@@ -110,9 +125,3 @@ For any other issues and feedback about this plugin, please submit it to this re
 ## Troubleshooting
 
 If you have trouble using plugins, check out the [Plugins Troubleshooting](https://docs.fastlane.tools/plugins/plugins-troubleshooting/) guide.
-
-## Reference
-
-- For details on generating an Appcircle Personal API Token, visit [Generating/Managing Personal API Tokens](https://docs.appcircle.io/appcircle-api/api-authentication#generatingmanaging-the-personal-api-tokens?utm_source=fastlane&utm_medium=plugin&utm_campaign=testing_distribution)
-
-- To create or learn more about Appcircle testing and distribution profiles, please refer to [Creating or Selecting a Distribution Profile](https://docs.appcircle.io/distribute/create-or-select-a-distribution-profile?utm_source=fastlane&utm_medium=plugin&utm_campaign=testing_distribution)
