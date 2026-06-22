@@ -125,3 +125,4 @@ For any other issues and feedback about this plugin, please submit it to this re
 ## Troubleshooting
 
 If you have trouble using plugins, check out the [Plugins Troubleshooting](https://docs.fastlane.tools/plugins/plugins-troubleshooting/) guide.
+
