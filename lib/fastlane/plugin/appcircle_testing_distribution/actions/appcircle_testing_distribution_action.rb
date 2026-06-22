@@ -33,6 +33,9 @@ module Fastlane
         #
         appPath = params[:appPath]
         message = params[:message]
+        #
+        authEndpoint = params[:authEndpoint]
+        apiEndpoint = params[:apiEndpoint]
 
         profileAuthType = AUTH_TYPE_MAPPING[profileAuthType] # map input to API values
 
@@ -46,23 +49,25 @@ module Fastlane
         # Auth
         authToken = self.ac_login(personal_api_token: personalAPIToken,
                                   personal_access_key: personalAccessKey,
-                                  sub_organization_name: subOrganizationName)
+                                  sub_organization_name: subOrganizationName,
+                                  auth_endpoint: authEndpoint,
+                                  api_endpoint: apiEndpoint)
 
         # Get or create profile
-        profileId = self.ac_get_or_create_profile(authToken, profileName, createProfileIfNotExists, profileCreationSettings, profileAuthType, profileUsername, profilePassword, profileTestingGroupNames)
+        profileId = self.ac_get_or_create_profile(authToken, profileName, createProfileIfNotExists, profileCreationSettings, profileAuthType, profileUsername, profilePassword, profileTestingGroupNames, apiEndpoint)
 
         # Upload package
-        self.ac_upload(authToken, appPath, profileId, profileName, message)
+        self.ac_upload(authToken, appPath, profileId, profileName, message, apiEndpoint)
       end
 
-      def self.ac_login(personal_api_token:, personal_access_key:, sub_organization_name:)
+      def self.ac_login(personal_api_token:, personal_access_key:, sub_organization_name:, auth_endpoint:, api_endpoint:)
         begin
           token = ''
 
           if personal_access_key
-            user = TDAuthService.get_ac_token_with_personal_access_key(personal_access_key: personal_access_key)
+            user = TDAuthService.get_ac_token_with_personal_access_key(personal_access_key: personal_access_key, auth_endpoint: auth_endpoint)
           else
-            user = TDAuthService.get_ac_token(pat: personal_api_token)
+            user = TDAuthService.get_ac_token(pat: personal_api_token, auth_endpoint: auth_endpoint)
           end
           UI.success("Login is successful.")
           token = user.accessToken
@@ -71,8 +76,8 @@ module Fastlane
             if personal_access_key
               UI.important("Warning: subOrganizationName is currently only supported with personalAPIToken auth. Ignoring sub-organization switch for Personal Access Key login.")
             else
-              organization_id = TDAuthService.get_organization_id(access_token: token, name: sub_organization_name)
-              user = TDAuthService.get_ac_token(pat: personal_api_token, sub_organization_id: organization_id)
+              organization_id = TDAuthService.get_organization_id(access_token: token, name: sub_organization_name, api_endpoint: api_endpoint)
+              user = TDAuthService.get_ac_token(pat: personal_api_token, sub_organization_id: organization_id, auth_endpoint: auth_endpoint)
               UI.message("Switched to sub-organization: #{sub_organization_name}")
               token = user.accessToken
             end
@@ -85,9 +90,9 @@ module Fastlane
         end
       end
 
-      def self.ac_get_or_create_profile(authToken, profileName, createProfileIfNotExists, profileCreationSettings, profileAuthType, profileUsername, profilePassword, profileTestingGroupNames)
+      def self.ac_get_or_create_profile(authToken, profileName, createProfileIfNotExists, profileCreationSettings, profileAuthType, profileUsername, profilePassword, profileTestingGroupNames, apiEndpoint)
         begin
-          profileId = TDUploadService.get_profile_id(authToken, profileName)
+          profileId = TDUploadService.get_profile_id(authToken, profileName, apiEndpoint)
 
           if profileId
             UI.message("Profile '#{profileName}' found with ID: #{profileId}.")
@@ -97,7 +102,7 @@ module Fastlane
             UI.user_error!("Error: Profile '#{profileName}' not found. The option 'createProfileIfNotExists' is set to false, so a new profile was not created. To automatically create a new profile when it doesn't exist, set 'createProfileIfNotExists' to true.")
           elsif profileId.nil? && createProfileIfNotExists
             UI.message("Profile '#{profileName}' not found. Creating the new profile...")
-            profileId = TDUploadService.create_profile(authToken, profileName, profileAuthType, profileUsername, profilePassword, profileTestingGroupNames)
+            profileId = TDUploadService.create_profile(authToken, profileName, profileAuthType, profileUsername, profilePassword, profileTestingGroupNames, apiEndpoint)
           end
 
           return profileId
@@ -107,11 +112,11 @@ module Fastlane
         end
       end
 
-      def self.ac_upload(token, appPath, profileID, profileName, message)
+      def self.ac_upload(token, appPath, profileID, profileName, message, apiEndpoint)
         begin
           UI.message("Upload started.")
-          response = TDUploadService.upload_artifact(token: token, message: message, app: appPath, dist_profile_id: profileID)
-          result = self.checkTaskStatus(token, response['taskId'])
+          response = TDUploadService.upload_artifact(token: token, message: message, app: appPath, dist_profile_id: profileID, api_endpoint: apiEndpoint)
+          result = self.checkTaskStatus(token, response['taskId'], apiEndpoint)
 
           if result
             UI.success("#{appPath} uploaded to profile '#{profileName}' successfully  🎉")
@@ -122,8 +127,8 @@ module Fastlane
         end
       end
 
-      def self.checkTaskStatus(authToken, taskId)
-        uri = URI.parse("https://api.appcircle.io/task/v1/tasks/#{taskId}")
+      def self.checkTaskStatus(authToken, taskId, apiEndpoint)
+        uri = URI.parse("#{apiEndpoint}/task/v1/tasks/#{taskId}")
         
         check_interval = 1
         # timeout = 2 * 60 * 60 # 2 hours in seconds
@@ -195,6 +200,20 @@ module Fastlane
                                        env_name: "AC_SUB_ORGANIZATION_NAME",
                                        description: "Optional: Sub-organization name for app distribution. Profiles will be created under root organization if not provided",
                                        optional: true,
+                                       type: String),
+
+          FastlaneCore::ConfigItem.new(key: :authEndpoint,
+                                       env_name: "AC_AUTH_ENDPOINT",
+                                       description: "Optional: Authentication endpoint URL for self-hosted Appcircle installations. Defaults to the Appcircle cloud",
+                                       optional: true,
+                                       default_value: "https://auth.appcircle.io",
+                                       type: String),
+
+          FastlaneCore::ConfigItem.new(key: :apiEndpoint,
+                                       env_name: "AC_API_ENDPOINT",
+                                       description: "Optional: API endpoint URL for self-hosted Appcircle installations. Defaults to the Appcircle cloud",
+                                       optional: true,
+                                       default_value: "https://api.appcircle.io",
                                        type: String),
 
           FastlaneCore::ConfigItem.new(key: :profileName,

@@ -104,6 +104,24 @@ Provide **either** `personalAPIToken` **or** `personalAccessKey` — not both. I
 - `appPath`: Indicates the file path to the application package that will be uploaded to Appcircle Testing Distribution Profile.
 - `message`: Your message to testers, ensuring they receive important updates and information regarding the application.
 
+### Self-Hosted Appcircle
+
+If you run a self-hosted Appcircle installation, point the plugin to your own endpoints. Both parameters are optional and default to the Appcircle cloud, so existing cloud users do not need to set them.
+
+- `authEndpoint` (optional): Authentication endpoint URL. Defaults to `https://auth.appcircle.io`.
+- `apiEndpoint` (optional): API endpoint URL. Defaults to `https://api.appcircle.io`.
+
+```ruby
+  appcircle_testing_distribution(
+    personalAPIToken: ENV["AC_PERSONAL_API_TOKEN"],
+    authEndpoint: "https://auth.my-appcircle.example.com",
+    apiEndpoint: "https://api.my-appcircle.example.com",
+    profileName: ENV["AC_PROFILE_NAME"],
+    appPath: ENV["AC_APP_PATH"],
+    message: ENV["AC_MESSAGE"]
+  )
+```
+
 ## Further Details
 
 For more information please refer to the documentation.
