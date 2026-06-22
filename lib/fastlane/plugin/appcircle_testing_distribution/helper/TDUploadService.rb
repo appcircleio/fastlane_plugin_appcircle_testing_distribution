@@ -8,6 +8,29 @@ BASE_URL = "https://api.appcircle.io"
 module TDUploadService
   UI = FastlaneCore::UI
 
+  def self.put_with_retry(url, body, headers, max_retries: 5)
+    attempt = 0
+    delay = 1.0
+
+    begin
+      RestClient.put(url, body, headers)
+    rescue => e
+      status = e.respond_to?(:http_code) ? e.http_code : nil
+      retryable = status == 503 ||
+                  e.is_a?(RestClient::ServerBrokeConnection) ||
+                  e.is_a?(Errno::ECONNRESET) ||
+                  (defined?(RestClient::Exceptions::OpenTimeout) && e.is_a?(RestClient::Exceptions::OpenTimeout)) ||
+                  (defined?(RestClient::Exceptions::ReadTimeout) && e.is_a?(RestClient::Exceptions::ReadTimeout))
+
+      raise e if !retryable || attempt >= max_retries
+
+      attempt += 1
+      sleep(delay + rand(0.3))
+      delay *= 2
+      retry
+    end
+  end
+
   def self.upload_artifact(token:, message:, app:, dist_profile_id:, api_endpoint: BASE_URL)
     file_path = app
     file_name = File.basename(file_path)
@@ -38,14 +61,25 @@ module TDUploadService
       end
       file_id = upload_info['fileId']
       upload_url = upload_info['uploadUrl']
+      configuration = upload_info['configuration']
+      http_method = (configuration && configuration['httpMethod']) ? configuration['httpMethod'].to_s.upcase : 'PUT'
 
-      file_content = File.binread(file_path)
       UI.message("Uploading file to Appcircle...")
-      response = RestClient.put(
-        upload_url,
-        file_content,
-        { content_type: 'application/octet-stream' }
-      )
+      if http_method == 'POST'
+        sign_parameters = configuration['signParameters'] || {}
+        payload = {}
+        sign_parameters.each { |key, value| payload[key] = value }
+        payload['file'] = File.new(file_path, 'rb')
+        response = RestClient.post(upload_url, payload)
+      else
+        file_content = File.binread(file_path)
+        response = put_with_retry(
+          upload_url,
+          file_content,
+          { content_type: 'application/octet-stream' }
+        )
+      end
+
       if response.code.between?(200, 299)
         UI.success("File upload finished successfully with status code: #{response.code}")
       else
