@@ -1,0 +1,10 @@
+# CI image for building, testing and publishing the fastlane plugin gem.
+# All pipeline operations run inside this image so the Jenkins agent only needs Docker
+# (same approach as appcircle-cli).
+FROM ruby:3.1
+
+WORKDIR /plugin
+
+COPY . .
+
+RUN bundle install --jobs=4 --retry=3
