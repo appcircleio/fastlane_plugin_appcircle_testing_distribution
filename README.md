@@ -104,6 +104,26 @@ Provide **either** `personalAPIToken` **or** `personalAccessKey` — not both. I
 - `appPath`: Indicates the file path to the application package that will be uploaded to Appcircle Testing Distribution Profile.
 - `message`: Your message to testers, ensuring they receive important updates and information regarding the application.
 
+### Self-Hosted Appcircle
+
+If you run a self-hosted Appcircle installation, point the plugin to your own endpoints. Both parameters are optional and default to the Appcircle cloud, so existing cloud users do not need to set them.
+
+- `authEndpoint` (optional): Authentication endpoint URL. Defaults to `https://auth.appcircle.io`.
+- `apiEndpoint` (optional): API endpoint URL. Defaults to `https://api.appcircle.io`.
+
+```ruby
+  appcircle_testing_distribution(
+    personalAPIToken: ENV["AC_PERSONAL_API_TOKEN"],
+    authEndpoint: "https://auth.my-appcircle.example.com",
+    apiEndpoint: "https://api.my-appcircle.example.com",
+    profileName: ENV["AC_PROFILE_NAME"],
+    appPath: ENV["AC_APP_PATH"],
+    message: ENV["AC_MESSAGE"]
+  )
+```
+
+> **Self-signed or private CA certificates:** If your self-hosted Appcircle server uses a self-signed certificate (or one issued by a private/internal CA), requests will fail certificate validation. The plugin does not disable TLS verification. Trust the server's CA on the machine running Fastlane — add it to the system certificate store, or point the `SSL_CERT_FILE` environment variable at a PEM bundle that includes it.
+
 ## Further Details
 
 For more information please refer to the documentation.
@@ -125,3 +145,4 @@ For any other issues and feedback about this plugin, please submit it to this re
 ## Troubleshooting
 
 If you have trouble using plugins, check out the [Plugins Troubleshooting](https://docs.fastlane.tools/plugins/plugins-troubleshooting/) guide.
+

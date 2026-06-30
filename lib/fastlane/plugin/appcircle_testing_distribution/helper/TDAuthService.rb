@@ -13,8 +13,8 @@ class UserResponse
 end
 
 module TDAuthService
-  def self.get_ac_token(pat:, sub_organization_id: nil)
-    endpoint_url = 'https://auth.appcircle.io/auth/v2/token'
+  def self.get_ac_token(pat:, sub_organization_id: nil, auth_endpoint: 'https://auth.appcircle.io')
+    endpoint_url = "#{auth_endpoint}/auth/v2/token"
     uri = URI(endpoint_url)
 
     # Create HTTP request
@@ -46,8 +46,8 @@ module TDAuthService
     end
   end
 
-  def self.get_organization_id(access_token:, name:)
-    endpoint_url = 'https://api.appcircle.io/identity/v1/organizations'
+  def self.get_organization_id(access_token:, name:, api_endpoint: 'https://api.appcircle.io')
+    endpoint_url = "#{api_endpoint}/identity/v1/organizations"
     uri = URI(endpoint_url)
 
     # Create HTTP request
@@ -74,8 +74,8 @@ module TDAuthService
     end
   end
 
-  def self.get_ac_token_with_personal_access_key(personal_access_key:)
-    endpoint_url = 'https://auth.appcircle.io/auth/v1/token'
+  def self.get_ac_token_with_personal_access_key(personal_access_key:, auth_endpoint: 'https://auth.appcircle.io')
+    endpoint_url = "#{auth_endpoint}/auth/v1/token"
     uri = URI(endpoint_url)
 
     # Create HTTP request

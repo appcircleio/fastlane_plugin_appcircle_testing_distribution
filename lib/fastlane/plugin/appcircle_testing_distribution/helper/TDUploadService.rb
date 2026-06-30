@@ -8,12 +8,35 @@ BASE_URL = "https://api.appcircle.io"
 module TDUploadService
   UI = FastlaneCore::UI
 
-  def self.upload_artifact(token:, message:, app:, dist_profile_id:)
+  def self.put_with_retry(url, body, headers, max_retries: 5)
+    attempt = 0
+    delay = 1.0
+
+    begin
+      RestClient.put(url, body, headers)
+    rescue => e
+      status = e.respond_to?(:http_code) ? e.http_code : nil
+      retryable = status == 503 ||
+                  e.is_a?(RestClient::ServerBrokeConnection) ||
+                  e.is_a?(Errno::ECONNRESET) ||
+                  (defined?(RestClient::Exceptions::OpenTimeout) && e.is_a?(RestClient::Exceptions::OpenTimeout)) ||
+                  (defined?(RestClient::Exceptions::ReadTimeout) && e.is_a?(RestClient::Exceptions::ReadTimeout))
+
+      raise e if !retryable || attempt >= max_retries
+
+      attempt += 1
+      sleep(delay + rand(0.3))
+      delay *= 2
+      retry
+    end
+  end
+
+  def self.upload_artifact(token:, message:, app:, dist_profile_id:, api_endpoint: BASE_URL)
     file_path = app
     file_name = File.basename(file_path)
     file_size = File.size(file_path)
 
-    upload_info_url = "#{BASE_URL}/distribution/v1/profiles/#{dist_profile_id}/app-versions"
+    upload_info_url = "#{api_endpoint}/distribution/v1/profiles/#{dist_profile_id}/app-versions"
     headers = {
       Authorization: "Bearer #{token}",
       accept: 'application/json'
@@ -38,14 +61,25 @@ module TDUploadService
       end
       file_id = upload_info['fileId']
       upload_url = upload_info['uploadUrl']
+      configuration = upload_info['configuration']
+      http_method = (configuration && configuration['httpMethod']) ? configuration['httpMethod'].to_s.upcase : 'PUT'
 
-      file_content = File.binread(file_path)
       UI.message("Uploading file to Appcircle...")
-      response = RestClient.put(
-        upload_url,
-        file_content,
-        { content_type: 'application/octet-stream' }
-      )
+      if http_method == 'POST'
+        sign_parameters = configuration['signParameters'] || {}
+        payload = {}
+        sign_parameters.each { |key, value| payload[key] = value }
+        payload['file'] = File.new(file_path, 'rb')
+        response = RestClient.post(upload_url, payload)
+      else
+        file_content = File.binread(file_path)
+        response = put_with_retry(
+          upload_url,
+          file_content,
+          { content_type: 'application/octet-stream' }
+        )
+      end
+
       if response.code.between?(200, 299)
         UI.success("File upload finished successfully with status code: #{response.code}")
       else
@@ -53,7 +87,7 @@ module TDUploadService
         raise "File upload failed."
       end
 
-      commit_url = "#{BASE_URL}/distribution/v1/profiles/#{dist_profile_id}/app-versions"
+      commit_url = "#{api_endpoint}/distribution/v1/profiles/#{dist_profile_id}/app-versions"
       uri = URI(commit_url)
       uri.query = URI.encode_www_form({ action: 'commitFileUpload' })
 
@@ -87,8 +121,8 @@ module TDUploadService
     end
   end
 
-  def self.get_distribution_profiles(auth_token:)
-    url = "#{BASE_URL}/distribution/v2/profiles"
+  def self.get_distribution_profiles(auth_token:, api_endpoint: BASE_URL)
+    url = "#{api_endpoint}/distribution/v2/profiles"
   
     # Set up the headers with authentication
     headers = {
@@ -106,8 +140,8 @@ module TDUploadService
     end
   end
 
-  def self.get_testing_groups(auth_token:)
-    url = "#{BASE_URL}/distribution/v2/testing-groups"
+  def self.get_testing_groups(auth_token:, api_endpoint: BASE_URL)
+    url = "#{api_endpoint}/distribution/v2/testing-groups"
   
     # Set up the headers with authentication
     headers = {
@@ -125,8 +159,8 @@ module TDUploadService
     end
   end
 
-  def self.create_distribution_profile(name:, auth_token:)
-    url = "#{BASE_URL}/distribution/v2/profiles"
+  def self.create_distribution_profile(name:, auth_token:, api_endpoint: BASE_URL)
+    url = "#{api_endpoint}/distribution/v2/profiles"
     headers = {
       Authorization: "Bearer #{auth_token}",
       content_type: :json,
@@ -146,8 +180,8 @@ module TDUploadService
     end
   end
 
-  def self.update_distribution_profile(profile_id:, auth_type:, username:, password:, testing_group_ids:, auth_token:)
-    url = "#{BASE_URL}/distribution/v2/profiles/#{profile_id}"
+  def self.update_distribution_profile(profile_id:, auth_type:, username:, password:, testing_group_ids:, auth_token:, api_endpoint: BASE_URL)
+    url = "#{api_endpoint}/distribution/v2/profiles/#{profile_id}"
     headers = {
       Authorization: "Bearer #{auth_token}",
       content_type: :json,
@@ -179,11 +213,11 @@ module TDUploadService
     end
   end
 
-  def self.get_profile_id(authToken, profileName)
+  def self.get_profile_id(authToken, profileName, api_endpoint = BASE_URL)
     profileId = nil
 
     begin
-      profiles = TDUploadService.get_distribution_profiles(auth_token: authToken)
+      profiles = TDUploadService.get_distribution_profiles(auth_token: authToken, api_endpoint: api_endpoint)
       profiles.each do |profile|
         if profile["name"] == profileName
           profileId = profile['id']
@@ -197,12 +231,12 @@ module TDUploadService
     return profileId
   end
 
-  def self.get_testing_group_ids(authToken, testingGroupNames)
+  def self.get_testing_group_ids(authToken, testingGroupNames, api_endpoint = BASE_URL)
     testingGroupIds = []
     remainingGroupNames = Set.new(testingGroupNames)
 
     begin
-      groups = TDUploadService.get_testing_groups(auth_token: authToken)
+      groups = TDUploadService.get_testing_groups(auth_token: authToken, api_endpoint: api_endpoint)
 
       groups.each do |group|
         if remainingGroupNames.include?(group["name"])
@@ -219,17 +253,18 @@ module TDUploadService
     return testingGroupIds
   end
 
-  def self.create_profile(authToken, profileName, profileAuthType, profileUsername, profilePassword, profileTestingGroupNames)
+  def self.create_profile(authToken, profileName, profileAuthType, profileUsername, profilePassword, profileTestingGroupNames, api_endpoint = BASE_URL)
     # Get testing group IDs
     if !profileTestingGroupNames&.empty?
-      profileTestingGroupIds = TDUploadService.get_testing_group_ids(authToken, profileTestingGroupNames)
+      profileTestingGroupIds = TDUploadService.get_testing_group_ids(authToken, profileTestingGroupNames, api_endpoint)
     end
-    
+
     # Create
     begin
       new_profile = TDUploadService.create_distribution_profile(
         name: profileName,
-        auth_token: authToken
+        auth_token: authToken,
+        api_endpoint: api_endpoint
       )
       if new_profile.nil?
         raise "Error: The new profile could not be created."
@@ -248,7 +283,8 @@ module TDUploadService
         username: profileUsername,
         password: profilePassword,
         testing_group_ids: profileTestingGroupIds,
-        auth_token: authToken
+        auth_token: authToken,
+        api_endpoint: api_endpoint
       )
       if configured_profile.nil?
         raise "Error: The new profile could not be configured."
