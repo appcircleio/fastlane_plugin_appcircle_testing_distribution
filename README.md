@@ -8,7 +8,7 @@ Appcircle's test distribution extension enables developers to create test groups
 
 ## Exploring Testing Distribution
 
-Testing distribution is the process of distributing test builds to designated test groups or individuals. This process allows developers to gather quick feedback, identify bugs, and ensure the quality of software applications before releasing them to customers. Appcircle's test distribution module enables developers to create test groups and share builds with them, utilizing enterprise-grade authentication methods.
+Testing distribution is the process of distributing test builds to designated test groups or individuals. This process allows developers to gather quick feedback, identify bugs, and ensure the quality of software applications before releasing them to customers. Appcircle's Testing Distribution module enables developers to create test groups and share builds with them, utilizing enterprise-grade authentication methods.
 
 ## Benefits of Using Testing Distribution
 
@@ -36,11 +36,10 @@ Testing distribution is the process of distributing test builds to designated te
    - **Better Quality Control:** Ensures that end users receive a more stable and polished product.
    - **Customer Satisfaction:** By delivering higher quality software, customer satisfaction and trust in the product increase.
 
+9. **Re-Sign and Auto-Resign:**
+   - **Update Without Rebuilding:** Re-sign iOS and Android binaries with updated signing identities, manually or automatically, and keep distributing without a new build.
+
 Overall, using testing distribution in mobile DevOps significantly enhances the efficiency, security, and effectiveness of the software development process, leading to better products and faster delivery times.
-
-**Re-Sign and Auto-Resign**
-
-- **Update Without Rebuilding:** Re-sign iOS and Android binaries with updated signing identities, manually or automatically, and keep distributing without a new build.
 
 ## How to use Appcircle Testing Distribution Plugin
 
@@ -54,9 +53,9 @@ In order to share your builds with testers, you can create testing distribution 
 
 To generate a Personal API Token, follow these steps:
 
-1. Go to the My Organization screen (the second option at the bottom left).
-2. You'll find the Personal API Token section in the top right corner.
-3. Press the "Generate Token" button to generate your first token.
+1. Open the **My Organization** screen from your profile avatar at the bottom left.
+2. Go to the **Security** section and find the **Personal Access Key** card.
+3. Press **Generate Key** to generate your token.
 
 ![Token Generation](<https://cdn.appcircle.io/docs/assets/image%20(164).png>) -->
 
