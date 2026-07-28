@@ -8,7 +8,7 @@ Gem::Specification.new do |spec|
   spec.author        = 'appcircleio'
   spec.email         = 'cloud@appcircle.io'
 
-  spec.summary       = "Efficiently distribute application builds to users or testing groups using Appcircle's robust platform."
+  spec.summary       = "Appcircle Testing Distribution enables the binary distribution of Android (.apk, .aab) and iOS (.ipa) files, allowing teams to create test groups and share builds using enterprise authentication methods such as SSO and LDAP."
   spec.homepage      = "https://github.com/appcircleio/fastlane_plugin_appcircle_testing_distribution"
   spec.license       = "MIT"
 

@@ -3,10 +3,9 @@ require 'uri'
 require 'json'
 require 'rest-client'
 
-BASE_URL = "https://api.appcircle.io"
-
 module TDUploadService
   UI = FastlaneCore::UI
+  BASE_URL = "https://api.appcircle.io"
 
   def self.put_with_retry(url, body, headers, max_retries: 5)
     attempt = 0

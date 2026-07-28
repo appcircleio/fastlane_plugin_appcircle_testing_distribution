@@ -2,17 +2,17 @@
 
 [![fastlane Plugin Badge](https://rawcdn.githack.com/fastlane/fastlane/master/fastlane/assets/plugin-badge.svg)](https://rubygems.org/gems/fastlane-plugin-appcircle_testing_distribution)
 
-Appcircle simplifies the distribution of builds to test teams with an extensive platform for managing and tracking applications, versions, testers, and teams. Appcircle integrates with enterprise authentication mechanisms such as LDAP and SSO, ensuring secure distribution of testing packages. Learn more about Appcircle testing distribution. Learn more about [Appcircle testing distribution](https://appcircle.io/testing-distribution?utm_source=fastlane&utm_medium=plugin&utm_campaign=testing_distribution)
+Appcircle Testing Distribution enables the binary distribution of Android (.apk, .aab) and iOS (.ipa) files, allowing teams to create test groups and share builds using enterprise authentication methods such as SSO and LDAP. Learn more about [Appcircle testing distribution](https://appcircle.io/testing-distribution?utm_source=fastlane&utm_medium=plugin&utm_campaign=testing_distribution)
 
 Appcircle's test distribution extension enables developers to create test groups and share builds with them, utilizing enterprise-grade authentication methods. With the Fastlane plugin, this module will be accessible directly fastlane actions.
 
 ## Exploring Testing Distribution
 
-Testing distribution is the process of distributing test builds to designated test groups or individuals. This process allows developers to gather quick feedback, identify bugs, and ensure the quality of software applications before releasing them to customers. Appcircle's test distribution module enables developers to create test groups and share builds with them, utilizing enterprise-grade authentication methods.
+Testing distribution is the process of distributing test builds to designated test groups or individuals. This process allows developers to gather quick feedback, identify bugs, and ensure the quality of software applications before releasing them to customers. Appcircle's Testing Distribution module enables developers to create test groups and share builds with them, utilizing enterprise-grade authentication methods.
 
 ## Benefits of Using Testing Distribution
 
-1. **Simplified Binary Distribution**.
+1. **Simplified Binary Distribution:**
    - **Skip Traditional Stores:** Share IPA, APK, AAB files directly, avoiding the need to use App Store TestFlight or Google Play Internal Testing.
 2. **Streamlined Workflow:**
    - **Automated Processes:** Platforms like Appcircle automate the distribution process, saving time and reducing manual effort.
@@ -36,7 +36,12 @@ Testing distribution is the process of distributing test builds to designated te
    - **Better Quality Control:** Ensures that end users receive a more stable and polished product.
    - **Customer Satisfaction:** By delivering higher quality software, customer satisfaction and trust in the product increase.
 
+9. **Re-Sign and Auto-Resign:**
+   - **Update Without Rebuilding:** Re-sign iOS and Android binaries with updated signing identities, manually or automatically, and keep distributing without a new build.
+
 Overall, using testing distribution in mobile DevOps significantly enhances the efficiency, security, and effectiveness of the software development process, leading to better products and faster delivery times.
+
+## How to use Appcircle Testing Distribution Plugin
 
 <!-- ## Testing Distribution
 
@@ -48,9 +53,9 @@ In order to share your builds with testers, you can create testing distribution 
 
 To generate a Personal API Token, follow these steps:
 
-1. Go to the My Organization screen (the second option at the bottom left).
-2. You'll find the Personal API Token section in the top right corner.
-3. Press the "Generate Token" button to generate your first token.
+1. Open the **My Organization** screen from your profile avatar at the bottom left.
+2. Go to the **Security** section and find the **Personal Access Key** card.
+3. Press **Generate Key** to generate your token.
 
 ![Token Generation](<https://cdn.appcircle.io/docs/assets/image%20(164).png>) -->
 
@@ -84,10 +89,9 @@ fastlane add_plugin appcircle_testing_distribution
 
 ### Authentication
 
-Provide **either** `personalAPIToken` **or** `personalAccessKey` — not both. If neither is provided, or both are provided at the same time, the plugin fails fast with a descriptive error.
+Provide **either** `personalAPIToken` **or** `personalAccessKey`, not both. If neither is provided, or both are provided at the same time, the plugin fails fast with a descriptive error.
 
-- `personalAPIToken`: The Appcircle Personal API token used to authenticate and authorize access to Appcircle services within this plugin.
-- `personalAccessKey`: Alternative authentication method using a Personal Access Key. Use this if your organization provisions access keys instead of API tokens.
+- `personalAPIToken` / `personalAccessKey`: Provide exactly one to authenticate with Appcircle services. Providing both, or neither, fails with a descriptive error.
 
 > **Note:** `subOrganizationName` is currently supported only when authenticating with `personalAPIToken`. When used together with `personalAccessKey`, the sub-organization switch is skipped with a warning.
 
@@ -122,7 +126,7 @@ If you run a self-hosted Appcircle installation, point the plugin to your own en
   )
 ```
 
-> **Self-signed or private CA certificates:** If your self-hosted Appcircle server uses a self-signed certificate (or one issued by a private/internal CA), requests will fail certificate validation. The plugin does not disable TLS verification. Trust the server's CA on the machine running Fastlane — add it to the system certificate store, or point the `SSL_CERT_FILE` environment variable at a PEM bundle that includes it.
+> **Self-signed or private CA certificates:** If your self-hosted Appcircle server uses a self-signed certificate (or one issued by a private/internal CA), requests will fail certificate validation. The plugin does not disable TLS verification. Trust the server's CA on the machine running Fastlane: add it to the system certificate store, or point the `SSL_CERT_FILE` environment variable at a PEM bundle that includes it.
 
 ## Further Details
 
