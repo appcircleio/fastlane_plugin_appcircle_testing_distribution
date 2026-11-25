@@ -34,8 +34,8 @@ module Fastlane
         appPath = params[:appPath]
         message = params[:message]
         #
-        authEndpoint = params[:authEndpoint]
-        apiEndpoint = params[:apiEndpoint]
+        authEndpoint = TDAuthService.normalize_endpoint(params[:authEndpoint], TDAuthService::CLOUD_AUTH_ENDPOINT)
+        apiEndpoint = TDAuthService.normalize_endpoint(params[:apiEndpoint], TDAuthService::CLOUD_API_ENDPOINT)
 
         profileAuthType = AUTH_TYPE_MAPPING[profileAuthType] # map input to API values
 
@@ -47,6 +47,7 @@ module Fastlane
         end
 
         # Auth
+        self.ac_validate_endpoints(authEndpoint, apiEndpoint)
         authToken = self.ac_login(personal_api_token: personalAPIToken,
                                   personal_access_key: personalAccessKey,
                                   sub_organization_name: subOrganizationName,
@@ -58,6 +59,12 @@ module Fastlane
 
         # Upload package
         self.ac_upload(authToken, appPath, profileId, profileName, message, apiEndpoint)
+      end
+
+      def self.ac_validate_endpoints(auth_endpoint, api_endpoint)
+        TDAuthService.validate_endpoints(auth_endpoint: auth_endpoint, api_endpoint: api_endpoint)
+      rescue StandardError => e
+        UI.user_error!(e.message)
       end
 
       def self.ac_login(personal_api_token:, personal_access_key:, sub_organization_name:, auth_endpoint:, api_endpoint:)
@@ -72,15 +79,16 @@ module Fastlane
           UI.success("Login is successful.")
           token = user.accessToken
 
-          if sub_organization_name
-            if personal_access_key
-              UI.important("Warning: subOrganizationName is currently only supported with personalAPIToken auth. Ignoring sub-organization switch for Personal Access Key login.")
-            else
-              organization_id = TDAuthService.get_organization_id(access_token: token, name: sub_organization_name, api_endpoint: api_endpoint)
-              user = TDAuthService.get_ac_token(pat: personal_api_token, sub_organization_id: organization_id, auth_endpoint: auth_endpoint)
-              UI.message("Switched to sub-organization: #{sub_organization_name}")
-              token = user.accessToken
-            end
+          name = sub_organization_name.to_s.strip
+          unless name.empty?
+            token = TDAuthService.switch_to_sub_organization(
+              root_token: token,
+              name: name,
+              pat: personal_api_token || personal_access_key,
+              auth_endpoint: auth_endpoint,
+              api_endpoint: api_endpoint
+            )
+            UI.message("Switched to sub-organization: #{name}")
           end
 
           return token
@@ -198,7 +206,7 @@ module Fastlane
 
           FastlaneCore::ConfigItem.new(key: :subOrganizationName,
                                        env_name: "AC_SUB_ORGANIZATION_NAME",
-                                       description: "Optional: Sub-organization name for app distribution. Profiles will be created under root organization if not provided",
+                                       description: "Optional: Sub-organization name for app distribution. Use it when the Personal API Token or Personal Access Key belongs to the root organization. Leave empty to use the organization of the token",
                                        optional: true,
                                        type: String),
 

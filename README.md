@@ -93,11 +93,10 @@ Provide **either** `personalAPIToken` **or** `personalAccessKey`, not both. If n
 
 - `personalAPIToken` / `personalAccessKey`: Provide exactly one to authenticate with Appcircle services. Providing both, or neither, fails with a descriptive error.
 
-> **Note:** `subOrganizationName` is currently supported only when authenticating with `personalAPIToken`. When used together with `personalAccessKey`, the sub-organization switch is skipped with a warning.
-
 ### Other parameters
 
-- `subOrganizationName` (optional): Required when the Root Organization's `personalAPIToken` is used, and you want to create the profile under a sub-organization. In this case, provide the name of the sub-organization in this field. If you directly used the sub-organization's `personalAPIToken`, this parameter is not needed.
+- `subOrganizationName` (optional): Required when the Root Organization's `personalAPIToken` or `personalAccessKey` is used, and you want to create the profile under a sub-organization. In this case, provide the exact name of the sub-organization (case-sensitive) in this field. If you directly used the sub-organization's `personalAPIToken` or `personalAccessKey`, this parameter is not needed. If the plugin cannot find the sub-organization, or the token cannot access it, the lane fails. The plugin does not fall back to the root organization.
+  The option also reads the `AC_SUB_ORGANIZATION_NAME` environment variable, which the other Appcircle Fastlane plugins share.
 - `profileName`: Specifies the profile that will be used for uploading the app.
 - `createProfileIfNotExists` (optional): Ensures that a testing distribution profile is automatically created if it does not already exist; if the profile name already exists, the app will be uploaded to that existing profile instead.
 - `profileCreationSettings` (optional): If `createProfileIfNotExists` is `true` and a new profile being created, the profile will be configured with these settings.
@@ -114,6 +113,7 @@ If you run a self-hosted Appcircle installation, point the plugin to your own en
 
 - `authEndpoint` (optional): Authentication endpoint URL. Defaults to `https://auth.appcircle.io`.
 - `apiEndpoint` (optional): API endpoint URL. Defaults to `https://api.appcircle.io`.
+- Set `authEndpoint` and `apiEndpoint` together. If you set only one of them, the lane stops before it sends a request, so a self-hosted token never goes to the Appcircle cloud.
 
 ```ruby
   appcircle_testing_distribution(
